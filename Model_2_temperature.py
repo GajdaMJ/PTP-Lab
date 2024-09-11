@@ -9,7 +9,7 @@ import scipy.integrate
 # Flow parameters
 fv_w = 161.10420227050781 # Water Flow Rate (ml/min)
 fv_a = 11.524953842163086 # Anhydride Flow Rate (ml/min)
-v_cstr = 1 # Volume of CSTR (ml)
+v_cstr = 100 # Volume of CSTR (ml)
 
 #Convert flows to units (ml/s)
 fv_w_s = fv_w/60
@@ -22,7 +22,7 @@ flow_array = [fv_w_s,fv_a_s]
 params = {
     "flow": flow_array,
     "V": v_cstr,  # Volume in ml
-    "k0": 0.02, #1.8725e3,          # Reaction rate constant (ml/mol/s)
+    "k0": 1.8725e3,          # Reaction rate constant (ml/mol/s)
 
     # Thermodynamic constants (taken from Asprey et al., 1996)
     "Ea": 45622.34,             # Activation energy (J/mol)
@@ -49,23 +49,25 @@ def der_func(t,C, parameters):
     H = parameters['H']
     rho = parameters['rho']
     cp = parameters['cp']
-
-    #reaction_rate = C[0]*C[1] * k0  * np.exp(-Ea/R*C[3])
+    
+    
+    reaction_rate = C[0]*C[1] * k0  * np.exp(-Ea/(R*C[3]))
+    
     total_flow = flow[0]+flow[1]
-
+ 
     #Differential equations
-    dcdt[0] =  (flow[0]/V)*(2 - C[0])    - k0*C[0]*C[1] # reaction_rate # Water Concentration derv
-    dcdt[1] =  (flow[1]/V)*(1 - C[1])    - k0*C[0]*C[1] # reaction_rate # Anhydride Concentration derv
-    dcdt[2] =  (total_flow/V)*(0 - C[2]) + 2*k0*C[0]*C[1] # 2*reaction_rate # Acetic acid 
-    dcdt[3] =  0#(total_flow/V) * (ini_cond[3]-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
+    dcdt[0] =  (flow[0]/V)*(2 - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
+    dcdt[1] =  (flow[1]/V)*(1 - C[1])    - reaction_rate # reaction_rate # Anhydride Concentration derv
+    dcdt[2] =  (total_flow/V)*(0 - C[2]) + 2*reaction_rate # 2*reaction_rate # Acetic acid 
+    dcdt[3] =  (total_flow/V) * (298-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
 
 
-tspan = [0,60] # Time in seconds
+tspan = [0,600] # Time in seconds
 
 #For xini, c_water_0, c_AAH_0, C_AA_0, T0(in C)
-xini = [3,0,0,0] # Initial Conditions 
+xini = [22,0,0,298] # Initial Conditions 
 
 sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
 
@@ -77,3 +79,6 @@ plt.ylabel('Concentration(mol/L)')
 plt.legend()
 plt.title('Concentration of various components in a CSTR')
 plt.show()
+
+# plt.plot(sol.t, sol.y[3])
+# plt.show()

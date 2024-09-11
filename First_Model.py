@@ -11,7 +11,7 @@ fv_w = 1 # Water Flow Rate (ml/min)
 fv_a = 1 # Anhydride Flow Rate (ml/min)
 t_cstr = 25 # CSTR Temperature (c)
 k_1 = 0.02 # Reaction Kinetics (dm3/mol/s)
-v_cstr = 200 # Volume of CSTR (ml)
+v_cstr = 500 # Volume of CSTR (ml)
 
 flow = [fv_w,fv_a]
 # w + AAH -> 2AA 
@@ -19,7 +19,7 @@ flow = [fv_w,fv_a]
 # -ra = k_1 * C_A * C_B
 
 
-def der_func(t,C, phiv = flow, Cain=0.5, Cbin = 0.8, k1=0.1, V = 1):
+def der_func(t,C, phiv = flow, Cain=2, Cbin = 1, k1=0.2, V = 1):
     dcdt = np.zeros(3)
     dcdt[0] = (phiv[0]/V) * (Cain-C[0]) - k1 * C[0] *C[1] #Water Concentration derv
     dcdt[1] = (phiv[1]/V) * (Cbin- C[1]) - k1 * C[0] *C[1] #Anhydride Concentration derv
@@ -27,7 +27,7 @@ def der_func(t,C, phiv = flow, Cain=0.5, Cbin = 0.8, k1=0.1, V = 1):
     return dcdt
 
 tspan = [0,60]
-xini = [0,0,0] 
+xini = [2,1,0] 
 
 sol = scipy.integrate.solve_ivp(der_func, tspan, xini)
 
