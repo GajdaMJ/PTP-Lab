@@ -7,8 +7,8 @@ import scipy.integrate
 # Assume constant density
 
 
-fv_w = 161.10420227050781 # Water Flow Rate (ml/min)
-fv_a = 11.524953842163086 # Anhydride Flow Rate (ml/min)
+fv_w = 1 # Water Flow Rate (ml/min)
+fv_a = 1 # Anhydride Flow Rate (ml/min)
 t_cstr = 25 # CSTR Temperature (c)
 k_1 = 0.02 # Reaction Kinetics (dm3/mol/s)
 v_cstr = 200 # Volume of CSTR (ml)
