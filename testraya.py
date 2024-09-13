@@ -20,7 +20,6 @@ flow_array = [fv_w_s,fv_a_s]
 
 #Thermodynamic constants
 params = {
-    "C0_water": 13,
     "flow": flow_array,
     "V": v_cstr,  # Volume in ml
     "k0": 1.8725e3,          # Reaction rate constant (ml/mol/s)
@@ -63,23 +62,3 @@ def der_func(t,C, parameters):
     dcdt[3] =  (total_flow/V) * (298-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
-
-
-tspan = [0,600] # Time in seconds
-
-#For xini, c_water_0, c_AAH_0, C_AA_0, T0(in k)
-xini = [22,0,0,298] # Initial Conditions 
-
-sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
-
-plt.plot(sol.t, sol.y[0], label='Conc. Water')
-plt.plot(sol.t, sol.y[1], label='Conc. AAH')
-plt.plot(sol.t, sol.y[2], label='Conc. AA')
-plt.xlabel('time')
-plt.ylabel('Concentration(mol/L)')
-plt.legend()
-plt.title('Concentration of various components in a CSTR')
-plt.show()
-
-plt.plot(sol.t, sol.y[3])
-plt.show()
