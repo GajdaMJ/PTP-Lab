@@ -3,25 +3,28 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 my_data = np.genfromtxt('Data/test_11.09_cstr_AAHFlow.csv', delimiter=';', dtype=None, names=True, encoding=None)
 
+print(my_data)
 
 
-date_times = [datetime.strptime(dt.split('.')[0], '%Y-%m-%d %H:%M:%S') for dt in my_data['DateTime']]
 
-# Extract the 'vValue' column as y-axis data
-vvalues = my_data['vValue']
+import numpy as np
+import csv
+import pandas as pd
+import matplotlib.pyplot as plt
 
-# Plotting the data
-plt.figure(figsize=(10, 6))
-plt.plot(date_times, vvalues, marker='o', linestyle='-', color='b')
+df = pd.read_csv("CSTR/CSTR_27c.csv", sep = ";")
+tagname = df['TagName'].values
+time = df['DateTime'].values
+value = df['vValue'].values
 
-# Labeling the axes
-plt.xlabel('DateTime')
-plt.ylabel('vValue (ml/min)')
-plt.title('vValue over Time')
 
-# Rotate x-axis labels for better readability
-plt.xticks(rotation=45)
+#making the data frame with time as index
+data_1 = {'tagname' :tagname, 'time': time,'value':value}
+data_frame = pd.DataFrame(data=data_1, index=tagname)
 
-# Show the plot
-plt.tight_layout()  # Adjust layout to prevent label overlap
-plt.show()
+#the data frame with time and values in columns
+# data_1 = {'aflow':aflow}
+# data_frame = pd.DataFrame(data=data_1, index=time)
+
+print(data_frame)
+
