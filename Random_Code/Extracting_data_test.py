@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-my_data = np.genfromtxt('Data/test_11.09_cstr_AAHFlow.csv', delimiter=';', dtype=None, names=True, encoding=None)
+my_data = np.genfromtxt('Data\CSTR\Runs 18.09\cstr 33c.csv', delimiter=';', dtype=None, names=True, encoding=None)
 
 print(my_data)
 

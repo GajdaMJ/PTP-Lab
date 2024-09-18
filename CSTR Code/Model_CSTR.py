@@ -10,7 +10,7 @@ import scipy.integrate
 fv_w = 161.10420227050781  # Water Flow Rate (ml/min)
 fv_a = 11.524953842163086  # Anhydride Flow Rate (ml/min)
 
-v_cstr = 200  # Volume of CSTR (ml)
+v_cstr = 460  # Volume of CSTR (ml)
 # Convert flow rates to consistent units (ml/min to ml/s)
 fv_w_dm3_s = fv_w  / 60  # Water flow rate in ml/s
 fv_a_dm3_s = fv_a  / 60  # Anhydride flow rate in ml/s
