@@ -1,0 +1,1 @@
+#modeling the pfr as a cstr system in series with 7 cstr
