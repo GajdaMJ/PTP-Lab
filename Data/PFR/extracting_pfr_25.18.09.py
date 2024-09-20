@@ -68,7 +68,12 @@ P100['elapsed_minutes'] = (P100['time'] - P100['time'].iloc[0]).dt.total_seconds
 # plotting_variables(groups)
 # plt.show()
 
-plt.plot(T208['elapsed_minutes'],T208['value'])
+fig_ax, ax = plt.subplots(1,2, figsize = (10,8))
+ax = ax.flatten()
+ax[0].plot(T208['elapsed_minutes'],T208['value'])
+ax[1].plot(Q210['elapsed_minutes'], Q210['value'])
+ax[0].set_title('T208')
+ax[1].set_title('Q210')
 plt.show()
 
 
