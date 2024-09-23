@@ -76,3 +76,5 @@ for n in range(7):
     sol_t.append(sol.t)  # sol.t is the time points
 
 print(sol_y)
+
+
