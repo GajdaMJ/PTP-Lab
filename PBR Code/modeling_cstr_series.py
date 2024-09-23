@@ -60,16 +60,19 @@ def der_func(t,C, parameters):
 sol_y = []
 sol_t = []
 
-tspan = [0,60] # Time in seconds
+tspan = [0, 60]  # Time in seconds
 
-for n in range(0,7):
+for n in range(7):
     if n < 1:
-        xini = [3,0,0,0] # Initial Conditions 
+        xini = [3, 0, 0, 0]  # Initial Conditions
     else:
-        xini = [sol_y[n,0,-1],sol_y[n,1,-1],sol_y[n,2,-1],sol_y[n,3,-1]] 
+        # Use the last values from the previous solution as initial conditions
+        xini = [sol_y[-1][i][-1] for i in range(4)]  # Access last time-step of previous solution
 
     sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
-    sol_y = sol_y.append(sol.y)
-    sol_t = sol_t.append(sol.t)
+    
+    # Append solutions to the lists without reassigning the append result
+    sol_y.append(sol.y)  # sol.y is the array of results
+    sol_t.append(sol.t)  # sol.t is the time points
 
 print(sol_y)
