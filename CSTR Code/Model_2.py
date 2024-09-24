@@ -69,6 +69,9 @@ xini = [3,0,0,0] # Initial Conditions
 
 sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
 
+
+plt.plot(sol.t, sol.y[2])
+plt.show()
 # plt.plot(sol.t, sol.y[0], label='Ca')
 # plt.plot(sol.t, sol.y[1], label='Cb')
 # plt.plot(sol.t, sol.y[2], label='Cc')
@@ -77,4 +80,7 @@ sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
 # plt.legend()
 # plt.title('Concentration of various components in a CSTR')
 # plt.show()
-print(sol.y[0,-1])
+
+
+
+

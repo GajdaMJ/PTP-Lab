@@ -56,25 +56,36 @@ def der_func(t,C, parameters):
     dcdt[3] =  0#(total_flow/V) * (ini_cond[3]-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
+tspan = [0,60] # Time in seconds
 
 sol_y = []
 sol_t = []
 
-tspan = [0, 60]  # Time in seconds
-
 for n in range(7):
-    if n < 1:
-        xini = [3, 0, 0, 0]  # Initial Conditions
+    if n == 0:
+        xini = [3,0,0,0] # Initial Conditions 
     else:
-        # Use the last values from the previous solution as initial conditions
         xini = [sol_y[-1][i][-1] for i in range(4)]  # Access last time-step of previous solution
 
+    #solving the function
     sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
-    
-    # Append solutions to the lists without reassigning the append result
-    sol_y.append(sol.y)  # sol.y is the array of results
-    sol_t.append(sol.t)  # sol.t is the time points
 
-print(sol_y)
+    #appending the results to the previously made lists
+    sol_y.append(sol.y)
+    sol_t.append(sol.t)
 
+# plt.plot(sol_y[0][2])
+# plt.show()
+
+
+#making subpltos
+
+fig, ax = plt.subplots(4,3, figsize = (12,6))
+ax = ax.flatten()
+ax_num = 0
+for i in range(7):
+    ax[i].plot(sol_t[0],sol_y[i][2])
+    ax_num += 1
+
+plt.show()
 
