@@ -43,7 +43,7 @@ plt.title('T200_PV vValue over Time')
 
 # Rotate x-axis labels for better readability
 plt.xticks(rotation=45)
-plt.legend()
+
 # Show the plot
 plt.tight_layout()  # Adjust layout to prevent label overlap
 plt.show()
