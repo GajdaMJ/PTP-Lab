@@ -1,10 +1,8 @@
+#modeling the pfr as a cstr system in series with 7 cstr
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 import scipy.integrate
 
-# Assume reaction is 1st order wrt both components
-# Assume isothermal (no exotherm)
-# Assume constant density
 
 # Flow parameters
 fv_w = 161.10420227050781 # Water Flow Rate (ml/min)
@@ -34,8 +32,6 @@ params = {
 
 
 
-
-
 def der_func(t,C, parameters):
     # Initializing derivative vector
     dcdt = np.zeros(4)
@@ -60,27 +56,46 @@ def der_func(t,C, parameters):
     dcdt[3] =  0#(total_flow/V) * (ini_cond[3]-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
-
-
 tspan = [0,60] # Time in seconds
 
-#For xini, c_water_0, c_AAH_0, C_AA_0, T0(in C)
-xini = [3,0,0,0] # Initial Conditions 
+sol_y = []
+sol_t = []
 
-sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
+for n in range(7):
+    if n == 0:
+        xini = [3,0,0,0] # Initial Conditions 
+    else:
+        xini = [sol_y[-1][i][-1] for i in range(4)]  # Access last time-step of previous solution
 
+    #solving the function
+    sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
 
-plt.plot(sol.t, sol.y[2])
-plt.show()
-# plt.plot(sol.t, sol.y[0], label='Ca')
-# plt.plot(sol.t, sol.y[1], label='Cb')
-# plt.plot(sol.t, sol.y[2], label='Cc')
-# plt.xlabel('time')
-# plt.ylabel('Concentration(mol/L)')
-# plt.legend()
-# plt.title('Concentration of various components in a CSTR')
+    #appending the results to the previously made lists
+    sol_y.append(sol.y)
+    sol_t.append(sol.t)
+
+# plt.plot(sol_y[0][2])
 # plt.show()
 
 
+#making subpltos
+fig, ax = plt.subplots(3, 3, figsize=(12, 6))  #make a 3x3 grid of subplots
+ax = ax.flatten()  
+
+for i in range(7):  
+    ax[i].plot(sol_t[i], sol_y[i][2])
+    ax[i].set_xlabel('Time [s]')
+    ax[i].set_ylabel('Concentration')
+    ax[i].set_title(f'Rector {i}')
 
 
+# plt.minorticks_on()
+# plt.grid(which = 'major')
+# plt.grid(which= 'minor')
+
+# plt.tight_layout()  # Adjust layout to prevent overlap
+# plt.show()
+
+print(len(sol_y[4][2]))
+print(len(sol_t[1]))
+print(len(sol_t[0]))
