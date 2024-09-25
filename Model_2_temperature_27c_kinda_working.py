@@ -9,16 +9,16 @@ import scipy.integrate
 # Assume constant density
 
 # Flow parameters
-fv_w = 161.10420227050781  # Water Flow Rate (ml/min)
-fv_a = 11.524953842163086  # Anhydride Flow Rate (ml/min)
+fv_w = 186.993377685547  # Water Flow Rate (ml/min)
+fv_a = 19.6142463684082  # Anhydride Flow Rate (ml/min)
 
-v_cstr = 200  # Volume of CSTR (ml)
+v_cstr = 500  # Volume of CSTR (ml)
 # Convert flow rates to consistent units (ml/min to ml/s)
 fv_w_dm3_s = fv_w  / 60  # Water flow rate in ml/s
 fv_a_dm3_s = fv_a  / 60  # Anhydride flow rate in ml/s
 
 #Inlet Temperature 
-T0 = 25 # (celsius)
+T0 = 27 # (celsius)
 
 #Chemical constants
 mm_water = 18.01528 # (g/mol)
@@ -39,12 +39,12 @@ params = {
     "Inlet temperature": T0+273.15,
     "flow": flow_array,
     "V": v_cstr,  # Volume in ml
-    "k0": np.exp(16.25)*1000,          # Reaction rate constant (ml/mol/s)
+    "k0": 1e6, #np.exp(16.25)          # Reaction rate constant (ml/mol/s)
 
     # Thermodynamic constants (taken from Asprey et al., 1996)
     "Ea": 45622.34,             # Activation energy (J/mol)
     "R": 8.314,              # Gas constant (J/mol/K)
-    "H": -56.6e3,              # Enthalpy change (J/mol)
+    "H": -56.6e4,              # Enthalpy change (J/mol)
     "rho": 1,            # Density (g/ml)
     "cp": 4.186             # Heat capacity (J/g/K)
 }
@@ -67,9 +67,9 @@ def der_func(t,C, parameters):
     cp = parameters['cp']
     inlet_temp = parameters["Inlet temperature"]
     
-    reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) *1e-3
+    reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) 
 
-
+    print(C_in_w, C_in_AAH)
     total_flow = flow[0]+flow[1]
     #Differential equations
     dcdt[0] =  (flow[0]/V)*(C_in_w - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
@@ -80,7 +80,7 @@ def der_func(t,C, parameters):
 
 
 
-tspan = [0,6000] # Time in seconds
+tspan = [0,2100] # Time in seconds
 
 #For xini, c_water_0, c_AAH_0, C_AA_0, T0(in k)
 xini = [cw_pure,0,0,T0+273.15] # Initial Conditions 
@@ -127,13 +127,13 @@ sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, metho
 
 
 
-plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
+# plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
+# plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
+plt.plot(sol_me[0], sol_me[1][:, 3]-273.15, label='temp')
+
 plt.xlabel('time')
-plt.ylabel('Concentration(mol/mL)')
+plt.ylabel('Temperature')
 plt.legend()
-plt.title('Concentration of various components in a CSTR')
+plt.title('Temperature')
 plt.show()
 
-plt.plot(sol.t, sol.y[3])
-plt.show()

@@ -2,12 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+# Load data for different temperatures
+my_data = np.genfromtxt('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv', delimiter=';', dtype=None, names=True, encoding=None)
+data_33c = np.genfromtxt('CSTR\\test 18.09.csv', delimiter=';', dtype=None, names=True, encoding=None)
+data_22c = np.genfromtxt('Data\\CSTR\\23.09 22c.csv', delimiter=';', dtype=None, names=True, encoding=None)
+data_37c = np.genfromtxt('Data\\CSTR\\25.09 37c.csv', delimiter=';', dtype=None, names=True, encoding=None)
 
-my_data = np.genfromtxt('Data\CSTR\Runs 16.09\CSTR 27c.csv', delimiter=';', dtype=None, names=True, encoding=None)
-data_33c =  np.genfromtxt('CSTR\\test 18.09.csv', delimiter=';', dtype=None, names=True, encoding=None)
-data_22c= np.genfromtxt('Data\CSTR\\23.09 22c.csv', delimiter=';', dtype=None, names=True, encoding=None)
-data_37c= np.genfromtxt('Data\CSTR\\25.09 37c.csv', delimiter=';', dtype=None, names=True, encoding=None)
-
+# Function to extract temperature data
 def temp_extract(data):
     # Extract rows where TagName is 'T200_PV'
     t200_pv_rows = data[data['TagName'] == 'T200_PV']
@@ -27,22 +28,44 @@ def temp_extract(data):
 
     return elapsed_time, vvalues
 
+# Extract temperature data
+elapsed_time_27c, temp_27c = temp_extract(my_data)
+elapsed_time_33c, temp_33c = temp_extract(data_33c)
+elapsed_time_22c, temp_22c = temp_extract(data_22c)
+elapsed_time_37c, temp_37c = temp_extract(data_37c)
 
+# Print the temperature range for 27°C and 33°C data
+print("Temperature range for 27°C data:", np.max(temp_27c) - np.min(temp_27c))
+print("Temperature range for 33°C data:", np.max(temp_33c) - np.min(temp_33c))
 
 # Plot the data
-plt.figure(figsize=(10, 6))
-plt.plot(temp_extract(my_data)[0], temp_extract(my_data)[1], marker='o', linestyle='-', color='b')
-plt.plot(temp_extract(data_22c)[0], temp_extract(data_22c)[1])
-plt.plot(temp_extract(data_37c)[0], temp_extract(data_37c)[1])
-plt.plot(temp_extract(data_33c)[0], temp_extract(data_33c)[1])
+plt.figure(figsize=(12, 8))
+
+# Plot for 27°C data
+plt.plot(elapsed_time_27c, temp_27c, label='27°C Data', marker='o', linestyle='-', color='blue')
+
+# Plot for 33°C data
+plt.plot(elapsed_time_33c, temp_33c, label='33°C Data', marker='o', linestyle='-', color='orange')
+
+# Plot for 22°C data
+plt.plot(elapsed_time_22c, temp_22c, label='22°C Data', marker='o', linestyle='-', color='green')
+print(np.max(temp_22c))
+# Plot for 37°C data
+plt.plot(elapsed_time_37c, temp_37c, label='37°C Data', marker='o', linestyle='-', color='red')
 
 # Labeling the axes
 plt.xlabel('Elapsed Time (min)')
-plt.ylabel('vValue (°C)')  # Adjust based on the correct unit for T200_PV
-plt.title('T200_PV vValue over Time')
+plt.ylabel('Temperature (°C)')  # Adjust based on the correct unit for T200_PV
+plt.title('T200_PV Temperature Data over Time')
 
 # Rotate x-axis labels for better readability
 plt.xticks(rotation=45)
+
+# Add a legend
+plt.legend()
+
+# Show grid
+plt.grid()
 
 # Show the plot
 plt.tight_layout()  # Adjust layout to prevent label overlap
