@@ -79,13 +79,23 @@ for n in range(7):
 
 
 #making subpltos
+fig, ax = plt.subplots(3, 3, figsize=(12, 6))  #make a 3x3 grid of subplots
+ax = ax.flatten()  
 
-fig, ax = plt.subplots(4,3, figsize = (12,6))
-ax = ax.flatten()
-ax_num = 0
-for i in range(7):
-    ax[i].plot(sol_t[0],sol_y[i][2])
-    ax_num += 1
+for i in range(7):  
+    ax[i].plot(sol_t[i], sol_y[i][2])
+    ax[i].set_xlabel('Time [s]')
+    ax[i].set_ylabel('Concentration')
+    ax[i].set_title(f'Rector {i}')
 
-plt.show()
 
+# plt.minorticks_on()
+# plt.grid(which = 'major')
+# plt.grid(which= 'minor')
+
+# plt.tight_layout()  # Adjust layout to prevent overlap
+# plt.show()
+
+print(len(sol_y[4][2]))
+print(len(sol_t[1]))
+print(len(sol_t[0]))
