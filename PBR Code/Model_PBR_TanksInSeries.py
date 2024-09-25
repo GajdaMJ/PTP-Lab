@@ -10,13 +10,14 @@ import scipy.integrate
 fv_w = 161.10420227050781  # Water Flow Rate (ml/min)
 fv_a = 11.524953842163086  # Anhydride Flow Rate (ml/min)
 
-v_cstr = 460  # Volume of CSTR (ml)
+v_pfr = 131  # Volume of CSTR (ml)
+number_compartments = 7
 # Convert flow rates to consistent units (ml/min to ml/s)
 fv_w_dm3_s = fv_w  / 60  # Water flow rate in ml/s
 fv_a_dm3_s = fv_a  / 60  # Anhydride flow rate in ml/s
 
 #Inlet Temperature 
-T0 = 27 # (celsius)
+T0 = 25 # (celsius)
 
 #Chemical constants
 mm_water = 18.01528 # (g/mol)
@@ -36,7 +37,7 @@ params = {
     "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
     "Inlet temperature": T0+273.15,
     "flow": flow_array,
-    "V": v_cstr,  # Volume in ml
+    "V": v_pfr/number_compartments,  # Volume in ml
     "k0": np.exp(16.25)*1000,          # Reaction rate constant (ml/mol/s)
 
     # Thermodynamic constants (taken from Asprey et al., 1996)
@@ -78,21 +79,49 @@ def der_func(t,C, parameters):
 
 
 
-tspan = [0,600] # Time in seconds
+def tanks_in_series(number_compartments, tspan, parameters):
+    C_in_w = parameters["C_in_water"]
+    C_in_AAH = parameters["C_in_AAH"]
+    T_inlet = parameters["Inlet temperature"]
 
-#For xini, c_water_0, c_AAH_0, C_AA_0, T0(in k)
-xini = [cw_pure,0,0,T0+273.15] # Initial Conditions 
 
-sol = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
+    C_initial = [C_in_w, C_in_AAH, 0, T_inlet]
 
-#plt.plot(sol.t, sol.y[0], label='Conc. Water')
-plt.plot(sol.t, sol.y[1], label='Conc. AAH')
-plt.plot(sol.t, sol.y[2], label='Conc. AA')
-plt.xlabel('time')
-plt.ylabel('Concentration(mol/mL)')
+    results = []
+
+    for i in range(number_compartments):
+        sol = scipy.integrate.solve_ivp(der_func, tspan, C_initial, args=(params,))
+
+        results.append(sol)
+
+        C_initial = [sol.y[0][-1], sol.y[1][-1], sol.y[2][-1], sol.y[3][-1]]
+
+    return results
+
+
+# Time span for simulation
+tspan = [0, 600]  # Time in seconds
+
+# Solve the tanks-in-series model
+results = tanks_in_series(number_compartments, tspan, params)
+
+# Plot results for each tank
+for i, sol in enumerate(results):
+    plt.plot(sol.t, sol.y[1], label=f'Tank {i+1} - Conc. AAH')
+    plt.plot(sol.t, sol.y[2], label=f'Tank {i+1} - Conc. AA')
+
+plt.xlabel('time (s)')
+plt.ylabel('Concentration (mol/mL)')
 plt.legend()
-plt.title('Concentration of various components in a CSTR')
+plt.title('Concentration of AAH and Acetic Acid in Tanks-in-Series Model')
 plt.show()
 
-plt.plot(sol.t, sol.y[3])
+# Plot temperature results for each tank
+for i, sol in enumerate(results):
+    plt.plot(sol.t, sol.y[3], label=f'Tank {i+1} - Temperature')
+
+plt.xlabel('time (s)')
+plt.ylabel('Temperature (K)')
+plt.legend()
+plt.title('Temperature in Tanks-in-Series Model')
 plt.show()
