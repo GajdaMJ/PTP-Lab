@@ -8,19 +8,15 @@ data_33c = np.genfromtxt('CSTR\\test 18.09.csv', delimiter=';', dtype=None, name
 data_22c = np.genfromtxt('Data\\CSTR\\23.09 22c.csv', delimiter=';', dtype=None, names=True, encoding=None)
 data_37c = np.genfromtxt('Data\\CSTR\\25.09 37c.csv', delimiter=';', dtype=None, names=True, encoding=None)
 
-# Function to extract temperature data
-def temp_extract(data):
-    # Extract rows where TagName is 'T200_PV'
-    t200_pv_rows = data[data['TagName'] == 'T200_PV']
-    
-    # Filter out rows where vValue is null or invalid
-    valid_rows = [row for row in t200_pv_rows if row['vValue'] not in ['(null)', None]]
+
+def temp_extract(data, x="T200_PV", offset=0):
+    rows = data[data['TagName'] == x]
+    #Remove invalid rows
+    valid_rows = [row for row in rows if row['vValue'] not in ['(null)', None]]
     
     # Parse DateTime for valid rows
     date_times = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_rows]
-    
-    # Extract vValue and convert it to float
-    vvalues = [float(row['vValue']) for row in valid_rows]
+    vvalues = [float(row['vValue'])+offset for row in valid_rows]
     
     # Calculate elapsed time in minutes
     start_time = date_times[0]
