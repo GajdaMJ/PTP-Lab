@@ -210,14 +210,14 @@ for tank_num in range(2, 8):
     sol_tanks.append((sol_tanks[-1][0], sol_tank_current))  # Append current tank's solution
 
 
-######################################################## PLOTTING ###############################################################
 
+######################################################## PLOTTING ###############################################################
 # Plot the data
 fig, ax = plt.subplots(2, 4, figsize=(30, 10), sharex=True, sharey=True)
 
 # Plot for 208 data
-ax[0,0].plot(elapsed_time_208, temp_208 - temp_208[0], 'o', label='T208 Raw Data', color='#1f77b4')  # Blue
-ax[0,0].plot(elapsed_time_interp, temp_208_smooth - temp_208[0], '-', color='#ff7f0e', label='T208 Smoothed Curve')  # Orange
+ax[0,0].plot(elapsed_time_208, temp_208 - temp_208[0], 'o', label='T208 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[0,0].plot(elapsed_time_interp, temp_208_smooth - temp_208[0], '-', color='#1f77b4', label='T208 Smoothed Curve')  # Blue for Smoothed Curve
 ax[0,0].set_title('T208 Data')
 ax[0,0].set_xlabel('Elapsed Time (min)')
 ax[0,0].set_ylabel('Temperature (°C)')
@@ -225,32 +225,32 @@ ax[0,0].grid(True)
 ax[0,0].legend()
 
 # Plot for 207 data
-ax[0,1].plot(elapsed_time_207, temp_207 - temp_207[0], 'o', label='T207 Raw Data', color='#2ca02c')  # Green
-ax[0,1].plot(elapsed_time_interp, temp_207_smooth - temp_207[0], '-', color='#d62728', label='T207 Smoothed Curve')  # Red
+ax[0,1].plot(elapsed_time_207, temp_207 - temp_207[0], 'o', label='T207 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[0,1].plot(elapsed_time_interp, temp_207_smooth - temp_207[0], '-', color='#1f77b4', label='T207 Smoothed Curve')  # Blue for Smoothed Curve
 ax[0,1].set_title('T207 Data')
 ax[0,1].set_xlabel('Elapsed Time (min)')
 ax[0,1].grid(True)
 ax[0,1].legend()
 
 # Plot for 206 data
-ax[0,2].plot(elapsed_time_206, temp_206 - temp_206[0], 'o', label='T206 Raw Data', color='#9467bd')  # Purple
-ax[0,2].plot(elapsed_time_interp, temp_206_smooth -temp_206[0], '-', color='#8c564b', label='T206 Smoothed Curve')  # Brown
+ax[0,2].plot(elapsed_time_206, temp_206 - temp_206[0], 'o', label='T206 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[0,2].plot(elapsed_time_interp, temp_206_smooth -temp_206[0], '-', color='#1f77b4', label='T206 Smoothed Curve')  # Blue for Smoothed Curve
 ax[0,2].set_title('T206 Data')
 ax[0,2].set_xlabel('Elapsed Time (min)')
 ax[0,2].grid(True)
 ax[0,2].legend()
 
 # Plot for 205 data
-ax[0,3].plot(elapsed_time_205, temp_205 - temp_205[0], 'o', label='T205 Raw Data', color='#e377c2')  # Pink
-ax[0,3].plot(elapsed_time_interp, temp_205_smooth - temp_205[0], '-', color='#7f7f7f', label='T205 Smoothed Curve')  # Gray
+ax[0,3].plot(elapsed_time_205, temp_205 - temp_205[0], 'o', label='T205 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[0,3].plot(elapsed_time_interp, temp_205_smooth - temp_205[0], '-', color='#1f77b4', label='T205 Smoothed Curve')  # Blue for Smoothed Curve
 ax[0,3].set_title('T205 Data')
 ax[0,3].set_xlabel('Elapsed Time (min)')
 ax[0,3].grid(True)
 ax[0,3].legend()
 
 # Plot for 204 data
-ax[1,0].plot(elapsed_time_204, temp_204- temp_204[0], 'o', label='T204 Raw Data', color='#bcbd22')  # Yellow-green
-ax[1,0].plot(elapsed_time_interp, temp_204_smooth-temp_204[0], '-', color='#17becf', label='T204 Smoothed Curve')  # Cyan
+ax[1,0].plot(elapsed_time_204, temp_204- temp_204[0], 'o', label='T204 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[1,0].plot(elapsed_time_interp, temp_204_smooth - temp_204[0], '-', color='#1f77b4', label='T204 Smoothed Curve')  # Blue for Smoothed Curve
 ax[1,0].set_title('T204 Data')
 ax[1,0].set_xlabel('Elapsed Time (min)')
 ax[1,0].set_ylabel('Temperature (°C)')
@@ -258,24 +258,26 @@ ax[1,0].grid(True)
 ax[1,0].legend()
 
 # Plot for 203 data
-ax[1,1].plot(elapsed_time_203, temp_203 - temp_203[0], 'o', label='T203 Raw Data', color='#ff9896')  # Light Red
-ax[1,1].plot(elapsed_time_interp, temp_203_smooth - temp_203[0], '-', color='#c49c94', label='T203 Smoothed Curve')  # Light Brown
+ax[1,1].plot(elapsed_time_203, temp_203 - temp_203[0], 'o', label='T203 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[1,1].plot(elapsed_time_interp, temp_203_smooth - temp_203[0], '-', color='#1f77b4', label='T203 Smoothed Curve')  # Blue for Smoothed Curve
 ax[1,1].set_title('T203 Data')
 ax[1,1].set_xlabel('Elapsed Time (min)')
 ax[1,1].grid(True)
 ax[1,1].legend()
 
 # Plot for 202 data
-ax[1,2].plot(elapsed_time_202, temp_202 - temp_202[0], 'o', label='T202 Raw Data', color='#aec7e8')  # Light Blue
-ax[1,2].plot(elapsed_time_interp, temp_202_smooth - temp_202[0], '-', color='#ffbb78', label='T202 Smoothed Curve')  # Light Orange
+ax[1,2].plot(elapsed_time_202, temp_202 - temp_202[0], 'o', label='T202 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[1,2].plot(elapsed_time_interp, temp_202_smooth - temp_202[0], '-', color='#1f77b4', label='T202 Smoothed Curve')  # Blue for Smoothed Curve
 ax[1,2].set_title('T202 Data')
 ax[1,2].set_xlabel('Elapsed Time (min)')
 ax[1,2].grid(True)
 ax[1,2].legend()
 
 # Plot for 201 data
-ax[1,3].plot(elapsed_time_201, temp_201 - temp_201[0], 'o', label='T201 Raw Data', color='#98df8a')  # Light Green
-ax[1,3].plot(elapsed_time_interp, temp_201_smooth - temp_201[0], '-', color='#f7b6d2', label='T201 Smoothed Curve')  # Light Pink
+ax[1,3].plot(elapsed_time_201, temp_201 - temp_201[0], 'o', label='T201 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+ax[1,3].plot(elapsed_time_interp, temp_201_smooth - temp_201[0], '-', color='#1f77b4', label='T201 Smoothed Curve')  # Blue for Smoothed Curve
+
+# ax[1,3].plot(elapsed_time_201, sol_tanks[0][1][:, 3]-sol_tanks[0][1][0,3], color = 'red',label=f'Temperature Tank {1}')
 ax[1,3].set_title('T201 Data')
 ax[1,3].set_xlabel('Elapsed Time (min)')
 ax[1,3].grid(True)
