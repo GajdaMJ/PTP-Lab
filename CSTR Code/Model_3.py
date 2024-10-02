@@ -79,12 +79,12 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "Inlet temperature": T+273.15,
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 1.5e6,#np.exp(16.25),          # Reaction rate constant (ml/mol/s)
+        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
         "Ea": 45622.34,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
-        "H": -56.6e4,              # Enthalpy change (J/mol)
+        "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
         "cp": 4.186             # Heat capacity (J/g/K)
     }
@@ -115,8 +115,8 @@ def der_func(t,C, parameters):
 
     total_flow = flow[0]+flow[1]
     #Differential equations
-    dcdt[0] =  (flow[0]/V)*(C_in_w - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
-    dcdt[1] =  (flow[1]/V)*(C_in_AAH - C[1])  - reaction_rate  # Anhydride Concentration derv
+    dcdt[0] =  (total_flow/V)*(C_in_w - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
+    dcdt[1] =  (total_flow/V)*(C_in_AAH - C[1])  - reaction_rate  # Anhydride Concentration derv
     dcdt[2] =  (total_flow/V)*(0 - C[2]) + 2*reaction_rate # 2*reaction_rate # Acetic acid 
     dcdt[3] =  (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
