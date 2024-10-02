@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+from datetime import datetime
 # Assume reaction is 1st order wrt both components
 # Assume isothermal (no exotherm)
 # Assume constant density
@@ -57,7 +57,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     fv_a = fv2
     v_cstr=V
 
-    # Convert flow rates to consistent units (ml/min to ml/s)
+    # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv_w  / 60  # Water flow rate in ml/s
     fv_a_dm3_s = fv_a  / 60  # Anhydride flow rate in ml/s
 
@@ -81,7 +81,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "Inlet temperature": T0+273.15,
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 1e6, #np.exp(16.25)          # Reaction rate constant (ml/mol/s)
+        "k0": 1.5e6,#np.exp(16.25),          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
         "Ea": 45622.34,             # Activation energy (J/mol)
@@ -93,7 +93,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     xini = [cw_pure,0,0,T0+273.15] # Initial Conditions 
 
 
-    sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=200)
+    sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300)
     return sol_me
 
 def der_func(t,C, parameters):
@@ -115,7 +115,6 @@ def der_func(t,C, parameters):
     
     reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) 
 
-    print(C_in_w, C_in_AAH)
     total_flow = flow[0]+flow[1]
     #Differential equations
     dcdt[0] =  (flow[0]/V)*(C_in_w - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
@@ -124,15 +123,62 @@ def der_func(t,C, parameters):
     dcdt[3] =  (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
+def temp_extract(data, x="T200_PV", offset=0):
+    # Extract the flow data to determine the starting time
+    flow_rows = data[data['TagName'] == "P120_Flow"]
+    valid_flow_rows = [row for row in flow_rows if row['vValue'] not in ['(null)', None]]
+    flow_values = [float(row['vValue']) for row in valid_flow_rows]
+    flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
 
-sol_me = CSTR_model(22, 178.959564208984, 14.6649074554443)
+    # Find the first point where flow transitions from < 1 to > 1
+    start_time = None
+    for i in range(1, len(flow_values)):
+        if flow_values[i-1] < 1 and flow_values[i] > 1:
+            start_time = flow_dates[i]
+            break
+
+    if start_time is None:
+        raise ValueError("No flow transition from < 1 to > 1 found in the data.")
+
+    # Extract temperature data starting from the transition point
+    temp_rows = data[data['TagName'] == x]
+    valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]]
+    
+    temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows]
+    temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
+
+    # Calculate elapsed time in minutes from the start_time
+    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates]
+
+    return elapsed_time, temp_values
+
+
+data_22c = np.genfromtxt('Data\\CSTR\\23.09 22c.csv', delimiter=';', dtype=None, names=True, encoding=None)
+
+#Get temperature
+elapsed_time_22c, temp_22c = temp_extract(data_22c) 
+
+#Get AAH Flowrate
+elapsed_time_22c_aah, aah_flowrate_22c_vector = temp_extract(data_22c, x="P120_Flow")
+
+#Get Water Flowrate
+elapsed_time_22c_water, water_flowrate_22c_vector = temp_extract(data_22c, x='P100_Flow')
+
+initial_temperature = np.min(temp_22c)
+aah_flowrate_22c = np.median(aah_flowrate_22c_vector)
+water_flowrate_22c = np.median(water_flowrate_22c_vector)
+
+
+
+sol_me = CSTR_model(initial_temperature, water_flowrate_22c, aah_flowrate_22c, V=567)
+
 # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
 # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-plt.plot(sol_me[0], sol_me[1][:, 3]-273.15, label='temp')
-
-plt.xlabel('time')
+plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
+plt.plot(elapsed_time_22c, temp_22c, label='real')
+plt.xlabel('Time (minutes)')
+plt.xlim(0, np.max(elapsed_time_22c))
 plt.ylabel('Temperature')
 plt.legend()
 plt.title('Temperature')
 plt.show()
-

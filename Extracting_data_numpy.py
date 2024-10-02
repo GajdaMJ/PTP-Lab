@@ -10,19 +10,33 @@ data_37c = np.genfromtxt('Data\\CSTR\\25.09 37c.csv', delimiter=';', dtype=None,
 
 
 def temp_extract(data, x="T200_PV", offset=0):
-    rows = data[data['TagName'] == x]
-    #Remove invalid rows
-    valid_rows = [row for row in rows if row['vValue'] not in ['(null)', None]]
-    
-    # Parse DateTime for valid rows
-    date_times = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_rows]
-    vvalues = [float(row['vValue'])+offset for row in valid_rows]
-    
-    # Calculate elapsed time in minutes
-    start_time = date_times[0]
-    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in date_times]
+    # Extract the flow data to determine the starting time
+    flow_rows = data[data['TagName'] == "P120_Flow"]
+    valid_flow_rows = [row for row in flow_rows if row['vValue'] not in ['(null)', None]]
+    flow_values = [float(row['vValue']) for row in valid_flow_rows]
+    flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
 
-    return elapsed_time, vvalues
+    # Find the first point where flow transitions from < 1 to > 1
+    start_time = None
+    for i in range(1, len(flow_values)):
+        if flow_values[i-1] < 1 and flow_values[i] > 1:
+            start_time = flow_dates[i]
+            break
+
+    if start_time is None:
+        raise ValueError("No flow transition from < 1 to > 1 found in the data.")
+
+    # Extract temperature data starting from the transition point
+    temp_rows = data[data['TagName'] == x]
+    valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]]
+    
+    temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows]
+    temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
+
+    # Calculate elapsed time in minutes from the start_time
+    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates]
+
+    return elapsed_time, temp_values
 
 # Extract temperature data
 elapsed_time_27c, temp_27c = temp_extract(my_data)
