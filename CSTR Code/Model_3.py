@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-
+# Assume reaction is 1st order wrt both components
+# Assume isothermal (no exotherm)
+# Assume constant density
 
 def master_function(fun,tspan, y0, method='rk4', number_of_points=100):
     '''General function to solve system of differential equations. Does not work on single differential equations. \n
@@ -41,11 +42,17 @@ def master_function(fun,tspan, y0, method='rk4', number_of_points=100):
         return 'Unknown method specified. Check documentation for supported methods' # In case an unknown method is specified
     return t, y
 
-# Assume reaction is 1st order wrt both components
-# Assume isothermal (no exotherm)
-# Assume constant density
-
 def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
+    '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
+    Required Arguments: \n
+    T = inlet temperature for the reactor given in units celsius \n
+    fv1 = flow rate of water in units ml/min \n
+    fv2 = flow rate of acetic anhydride  \n
+    Optional Arguments: \n
+    V = volume of the reactor in units ml (default set to 500ml) \n
+    tspan = list of evaluation time in units seconds (default set to [0,3600]) \n
+    This function was built for the course "Practical Process Technology (6P4X0)" 
+    '''
     fv_w = fv1
     fv_a = fv2
     v_cstr=V
