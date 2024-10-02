@@ -25,7 +25,7 @@ caah_pure = rho_AAH / mm_AAH
 
 flow_array = [fv_w_dm3_s, fv_a_dm3_s]
 
-    #Thermodynamic constants
+#Thermodynamic constants
 params = {
     "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
     "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
