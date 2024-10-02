@@ -76,7 +76,7 @@ plt.legend()
 
 # Show grid
 plt.grid()
-
+plt.xlim(0,35)
 # Show the plot
 plt.tight_layout()  # Adjust layout to prevent label overlap
 plt.show()

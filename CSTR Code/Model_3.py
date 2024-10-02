@@ -47,30 +47,28 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
     fv1 = flow rate of water in units ml/min \n
-    fv2 = flow rate of acetic anhydride  \n
+    fv2 = flow rate of acetic anhydride ml/min \n
     Optional Arguments: \n
     V = volume of the reactor in units ml (default set to 500ml) \n
     tspan = list of evaluation time in units seconds (default set to [0,3600]) \n
     This function was built for the course "Practical Process Technology (6P4X0)" 
     '''
-    fv_w = fv1
-    fv_a = fv2
     v_cstr=V
 
     # Convert flow rates (ml/min to ml/s)
-    fv_w_dm3_s = fv_w  / 60  # Water flow rate in ml/s
-    fv_a_dm3_s = fv_a  / 60  # Anhydride flow rate in ml/s
+    fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
+    fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
 
-    T0=T
+
     
     #Chemical constants
     mm_water = 18.01528 # (g/mol)
     rho_water = 0.999842 # (g/ml)
-    cw_pure = rho_water/mm_water
+    cw_pure = rho_water/mm_water # (mol/ml)
 
     mm_AAH = 102.089 # (g/mol)
     rho_AAH = 1.082 # (g/ml)
-    caah_pure = rho_AAH/mm_AAH
+    caah_pure = rho_AAH/mm_AAH # (mol/ml)
 
     flow_array = [fv_w_dm3_s, fv_a_dm3_s]
 
@@ -78,7 +76,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     params = {
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
-        "Inlet temperature": T0+273.15,
+        "Inlet temperature": T+273.15,
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
         "k0": 1.5e6,#np.exp(16.25),          # Reaction rate constant (ml/mol/s)
@@ -90,7 +88,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "rho": 1,            # Density (g/ml)
         "cp": 4.186             # Heat capacity (J/g/K)
     }
-    xini = [cw_pure,0,0,T0+273.15] # Initial Conditions 
+    xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
 
 
     sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300)
@@ -152,7 +150,7 @@ def temp_extract(data, x="T200_PV", offset=0):
 
     return elapsed_time, temp_values
 
-
+# Make until line 167 a function
 data_22c = np.genfromtxt('Data\\CSTR\\23.09 22c.csv', delimiter=';', dtype=None, names=True, encoding=None)
 
 #Get temperature
