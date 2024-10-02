@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 fv_w = 23.4317 # Water Flow Rate (ml/min)
 fv_a = 5.4812  # Anhydride Flow Rate (ml/min)
 
-v_pfr = 131/7  # Volume of CSTR (ml)
+v_pfr = 337/7  # Volume of CSTR (ml)
 # Convert flow rates to consistent units (ml/min to ml/s)
 fv_w_dm3_s = fv_w / 60  # Water flow rate in ml/s
 fv_a_dm3_s = fv_a / 60  # Anhydride flow rate in ml/s
@@ -32,7 +32,7 @@ params = {
     "Inlet temperature": T0+273.15,
     "flow": flow_array,
     "V": v_pfr,  # Volume in ml
-    "k0": 1e6, #np.exp(16.25)          # Reaction rate constant (ml/mol/s)
+    "k0": 1e7,          # Reaction rate constant (ml/mol/s) other possible values
     # Thermodynamic constants (taken from Asprey et al., 1996)
     "Ea": 45622.34,             # Activation energy (J/mol)
     "R": 8.314,              # Gas constant (J/mol/K)
@@ -141,6 +141,20 @@ for tank_num in range(2, 8):
     sol_tanks.append((sol_tanks[-1][0], sol_tank_current))  # Append current tank's solution
 
 
+
+# # Print the first temperature value for the first reactor
+# first_temp_reactor_i = sol_tanks[0][1][0, 3] - 273.15  # Subtract 273 to convert from Kelvin to Celsius
+# print(f"The first temperature for the first reactor is: {first_temp_reactor_i:.2f} °C")
+
+# # Print the 20th temperature value for the first reactor
+# xth_temp_reactor_i = sol_tanks[0][1][2000, 3] - 273.15  # Subtract 273 to convert from Kelvin to Celsius
+# print(f"The xth temperature for the first reactor is: {xth_temp_reactor_i:.2f} °C")
+
+all_temp_reactor_i = sol_tanks[0][1][:, 3] - 273.15  # Subtract 273 to convert from Kelvin to Celsius
+print(f"The xth temperature for the first reactor is: {all_temp_reactor_i} °C")
+
+
+
 # Create subplots
 fig, ax = plt.subplots(2, 1, figsize=(12, 6), sharex=True)
 
@@ -154,7 +168,7 @@ ax[0].legend()  # Add legend to differentiate tanks
 
 # Plotting temperature for each tank
 for i in range(7):
-    ax[1].plot(sol_tanks[i][0], sol_tanks[i][1][:, 3]-273, label=f'Temperature Tank {i + 1}')
+    ax[1].plot(sol_tanks[i][0], sol_tanks[i][1][:, 3]-sol_tanks[i][1][0, 3], label=f'Temperature Tank {i + 1}')
 
 ax[1].set_xlabel('Time (s)')
 ax[1].set_ylabel('Temperature (K)')
