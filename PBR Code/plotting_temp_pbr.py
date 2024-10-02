@@ -70,8 +70,6 @@ temp_201 = np.array(temp_201)
 
 
 #################################################### MODELED DATA ##########################################################
-import numpy as np
-import matplotlib.pyplot as plt
 
 # Flow parameters
 fv_w = 23.4317 # Water Flow Rate (ml/min)
@@ -97,7 +95,7 @@ caah_pure = rho_AAH / mm_AAH
 
 flow_array = [fv_w_dm3_s, fv_a_dm3_s]
 
-    #Thermodynamic constants
+#Thermodynamic constants
 params = {
     "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
     "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
@@ -150,7 +148,7 @@ def der_func_continue(t, C, parameters, c_old):
 
     reaction_rate = C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) * 1e-3
 
-    total_flow = flow[0] + flow[1]
+    total_flow = flow[0] + flow[1]      #change the flow rate to be the total flow rate going into the next reactor
     dcdt[0] = (flow[0] / V) * (c_old[0] - C[0]) - reaction_rate  # Water
     dcdt[1] = (flow[1] / V) * (c_old[1] - C[1]) - reaction_rate  # Anhydride
     dcdt[2] = (total_flow / V) * (c_old[2] - C[2]) + 2 * reaction_rate  # Acetic acid
@@ -201,8 +199,8 @@ sol_tank1 = master_function(lambda t, C: der_func(t, C, params), tspan, xini, me
 
 # Initialize list of solutions for tanks 2 to 7
 sol_tanks = [sol_tank1]
-for tank_num in range(2, 8):
-    sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution
+for tank_num in range(1, 8):
+    sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution>
     sol_tank_current = np.zeros_like(sol_tank_prev)  # Prepare to store the current solution
     
     for i, t in enumerate(sol_tanks[-1][0]):
