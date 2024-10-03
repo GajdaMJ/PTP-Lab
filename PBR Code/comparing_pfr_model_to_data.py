@@ -51,7 +51,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     tspan = list of evaluation time in units seconds (default set to [0,3600]) \n
     This function was built for the course "Practical Process Technology (6P4X0)" 
     '''
-    v_cstr= V/7 #devide the pfr volume by the number of reactors
+    v_cstr= V/7 #divide the pfr volume by the number of reactors
 
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s

@@ -145,7 +145,7 @@ def temp_extract(data, x="T200_PV", offset=0):
     for i in range(1, len(flow_values)):
         if flow_values[i-1] < 1 and flow_values[i] > 1:     # Loop that checks when the AAH pump is turned on and sets that as the start time
             start_time = flow_dates[i]
-            break
+            break # Stop the loop once flow starts
 
     temp_rows = data[data['TagName'] == x]  # Only choose the rows for that particular instrument 
     valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]] # You want to remove the values when theres null otherwise it does weird things
@@ -159,8 +159,9 @@ def temp_extract(data, x="T200_PV", offset=0):
     return elapsed_time, temp_values
 
 def data_extract(data_path):
-
-    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None)
+    '''Extracts the initial conditions for a the reaction \n
+    Data_Path = relative path to the csv document'''
+    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
 
     #Get temperature
     elapsed_time, temp = temp_extract(data_numpy) 
@@ -171,18 +172,14 @@ def data_extract(data_path):
     #Get Water Flowrate
     elapsed_time_water, water_flowrate_vector = temp_extract(data_numpy, x='P100_Flow')
 
-    initial_temperature = np.min(temp)
-    aah_flowrate = np.median(aah_flowrate_vector)
-    water_flowrate = np.median(water_flowrate_vector)
+    initial_temperature = np.min(temp) # Minimum temp = ini temp
+    aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
+    water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
     return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
 
 
 if __name__ == '__main__':
     data_22c = data_extract('Data\\CSTR\\23.09 22c.csv')
-
-
-
-
     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
 
     # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
