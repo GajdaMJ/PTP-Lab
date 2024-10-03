@@ -241,6 +241,7 @@ for i in range(0,8):
     ax[i].set_title(f'reactor {i} Data')
     ax[i].set_xlabel('Elapsed Time (min)')
     ax[i].set_ylabel('Temperature (°C)')
+    ax[i].set_xlim(0,15)
     ax[i].grid(True)
     ax[i].set_xlim(0,15)
     #ax[i].legend()
