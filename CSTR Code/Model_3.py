@@ -115,7 +115,6 @@ def der_func(t,C, parameters):
     
     reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) 
 
-    print(C_in_w, C_in_AAH)
     total_flow = flow[0]+flow[1]
     #Differential equations
     dcdt[0] =  (flow[0]/V)*(C_in_w - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
@@ -124,15 +123,15 @@ def der_func(t,C, parameters):
     dcdt[3] =  (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
+if __name__ == "__main__":
+    sol_me = CSTR_model(22, 178.959564208984, 14.6649074554443)
+    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
+    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
+    plt.plot(sol_me[0], sol_me[1][:, 3]-273.15, label='temp')
 
-sol_me = CSTR_model(22, 178.959564208984, 14.6649074554443)
-# plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-# plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-plt.plot(sol_me[0], sol_me[1][:, 3]-273.15, label='temp')
-
-plt.xlabel('time')
-plt.ylabel('Temperature')
-plt.legend()
-plt.title('Temperature')
-plt.show()
+    plt.xlabel('time')
+    plt.ylabel('Temperature')
+    plt.legend()
+    plt.title('Temperature')
+    plt.show()
 
