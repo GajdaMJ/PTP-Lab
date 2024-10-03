@@ -70,11 +70,13 @@ temp_201 = np.array(temp_201)
 
 
 #################################################### MODELED DATA ##########################################################
+
+
 # Flow parameters
 fv_w = 23.4317 # Water Flow Rate (ml/min)
 fv_a = 5.4812  # Anhydride Flow Rate (ml/min)
 
-v_pfr = 131/7  # Volume of CSTR (ml)
+v_pfr = 337/7  # Volume of CSTR (ml)
 # Convert flow rates to consistent units (ml/min to ml/s)
 fv_w_dm3_s = fv_w / 60  # Water flow rate in ml/s
 fv_a_dm3_s = fv_a / 60  # Anhydride flow rate in ml/s
@@ -94,14 +96,14 @@ caah_pure = rho_AAH / mm_AAH
 
 flow_array = [fv_w_dm3_s, fv_a_dm3_s]
 
-    #Thermodynamic constants
+#Thermodynamic constants
 params = {
     "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
     "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
     "Inlet temperature": T0+273.15,
     "flow": flow_array,
     "V": v_pfr,  # Volume in ml
-    "k0": 1e6, #np.exp(16.25)          # Reaction rate constant (ml/mol/s)
+    "k0": 1e7,          # Reaction rate constant (ml/mol/s) other possible values
     # Thermodynamic constants (taken from Asprey et al., 1996)
     "Ea": 45622.34,             # Activation energy (J/mol)
     "R": 8.314,              # Gas constant (J/mol/K)
@@ -147,7 +149,7 @@ def der_func_continue(t, C, parameters, c_old):
 
     reaction_rate = C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) * 1e-3
 
-    total_flow = flow[0] + flow[1]
+    total_flow = flow[0] + flow[1]      #change the flow rate to be the total flow rate going into the next reactor
     dcdt[0] = (flow[0] / V) * (c_old[0] - C[0]) - reaction_rate  # Water
     dcdt[1] = (flow[1] / V) * (c_old[1] - C[1]) - reaction_rate  # Anhydride
     dcdt[2] = (total_flow / V) * (c_old[2] - C[2]) + 2 * reaction_rate  # Acetic acid
@@ -198,8 +200,8 @@ sol_tank1 = master_function(lambda t, C: der_func(t, C, params), tspan, xini, me
 
 # Initialize list of solutions for tanks 2 to 7
 sol_tanks = [sol_tank1]
-for tank_num in range(2, 8):
-    sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution
+for tank_num in range(1, 8):
+    sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution>
     sol_tank_current = np.zeros_like(sol_tank_prev)  # Prepare to store the current solution
     
     for i, t in enumerate(sol_tanks[-1][0]):
@@ -210,7 +212,6 @@ for tank_num in range(2, 8):
     sol_tanks.append((sol_tanks[-1][0], sol_tank_current))  # Append current tank's solution
 
 
-
 ######################################################## PLOTTING ###############################################################
 # Plot the data
 fig, ax = plt.subplots(2, 4, figsize=(30, 10), sharex=True, sharey=True)
@@ -218,6 +219,8 @@ fig, ax = plt.subplots(2, 4, figsize=(30, 10), sharex=True, sharey=True)
 # Plot for 208 data
 ax[0,0].plot(elapsed_time_208, temp_208 - temp_208[0], 'o', label='T208 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[0,0].plot(elapsed_time_interp, temp_208_smooth - temp_208[0], '-', color='#1f77b4', label='T208 Smoothed Curve')  # Blue for Smoothed Curve
+
+ax[0,0].plot(elapsed_time_208, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {8}')
 ax[0,0].set_title('T208 Data')
 ax[0,0].set_xlabel('Elapsed Time (min)')
 ax[0,0].set_ylabel('Temperature (°C)')
@@ -227,6 +230,8 @@ ax[0,0].legend()
 # Plot for 207 data
 ax[0,1].plot(elapsed_time_207, temp_207 - temp_207[0], 'o', label='T207 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[0,1].plot(elapsed_time_interp, temp_207_smooth - temp_207[0], '-', color='#1f77b4', label='T207 Smoothed Curve')  # Blue for Smoothed Curve
+
+ax[0,1].plot(elapsed_time_201, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {7}')
 ax[0,1].set_title('T207 Data')
 ax[0,1].set_xlabel('Elapsed Time (min)')
 ax[0,1].grid(True)
@@ -235,6 +240,8 @@ ax[0,1].legend()
 # Plot for 206 data
 ax[0,2].plot(elapsed_time_206, temp_206 - temp_206[0], 'o', label='T206 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[0,2].plot(elapsed_time_interp, temp_206_smooth -temp_206[0], '-', color='#1f77b4', label='T206 Smoothed Curve')  # Blue for Smoothed Curve
+
+ax[0,2].plot(elapsed_time_201, sol_tanks[5][1][:, 3]-sol_tanks[5][1][0,3], color = 'red',label=f'Temperature Tank {6}')
 ax[0,2].set_title('T206 Data')
 ax[0,2].set_xlabel('Elapsed Time (min)')
 ax[0,2].grid(True)
@@ -243,6 +250,8 @@ ax[0,2].legend()
 # Plot for 205 data
 ax[0,3].plot(elapsed_time_205, temp_205 - temp_205[0], 'o', label='T205 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[0,3].plot(elapsed_time_interp, temp_205_smooth - temp_205[0], '-', color='#1f77b4', label='T205 Smoothed Curve')  # Blue for Smoothed Curve
+
+ax[0,3].plot(elapsed_time_201, sol_tanks[4][1][:, 3]-sol_tanks[4][1][0,3], color = 'red',label=f'Temperature Tank {5}')
 ax[0,3].set_title('T205 Data')
 ax[0,3].set_xlabel('Elapsed Time (min)')
 ax[0,3].grid(True)
@@ -251,6 +260,8 @@ ax[0,3].legend()
 # Plot for 204 data
 ax[1,0].plot(elapsed_time_204, temp_204- temp_204[0], 'o', label='T204 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[1,0].plot(elapsed_time_interp, temp_204_smooth - temp_204[0], '-', color='#1f77b4', label='T204 Smoothed Curve')  # Blue for Smoothed Curve
+
+ax[1,0].plot(elapsed_time_201, sol_tanks[3][1][:, 3]-sol_tanks[3][1][0,3], color = 'red',label=f'Temperature Tank {4}')
 ax[1,0].set_title('T204 Data')
 ax[1,0].set_xlabel('Elapsed Time (min)')
 ax[1,0].set_ylabel('Temperature (°C)')
@@ -260,6 +271,8 @@ ax[1,0].legend()
 # Plot for 203 data
 ax[1,1].plot(elapsed_time_203, temp_203 - temp_203[0], 'o', label='T203 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[1,1].plot(elapsed_time_interp, temp_203_smooth - temp_203[0], '-', color='#1f77b4', label='T203 Smoothed Curve')  # Blue for Smoothed Curve
+
+ax[1,1].plot(elapsed_time_201, sol_tanks[2][1][:, 3]-sol_tanks[2][1][0,3], color = 'red',label=f'Temperature Tank {3}')
 ax[1,1].set_title('T203 Data')
 ax[1,1].set_xlabel('Elapsed Time (min)')
 ax[1,1].grid(True)
@@ -268,6 +281,8 @@ ax[1,1].legend()
 # Plot for 202 data
 ax[1,2].plot(elapsed_time_202, temp_202 - temp_202[0], 'o', label='T202 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[1,2].plot(elapsed_time_interp, temp_202_smooth - temp_202[0], '-', color='#1f77b4', label='T202 Smoothed Curve')  # Blue for Smoothed Curve
+
+ax[1,2].plot(elapsed_time_201, sol_tanks[1][1][:, 3]-sol_tanks[1][1][0,3], color = 'red',label=f'Temperature Tank {2}')
 ax[1,2].set_title('T202 Data')
 ax[1,2].set_xlabel('Elapsed Time (min)')
 ax[1,2].grid(True)
@@ -277,7 +292,7 @@ ax[1,2].legend()
 ax[1,3].plot(elapsed_time_201, temp_201 - temp_201[0], 'o', label='T201 Raw Data', color='#ff7f0e')  # Orange for Raw Data
 ax[1,3].plot(elapsed_time_interp, temp_201_smooth - temp_201[0], '-', color='#1f77b4', label='T201 Smoothed Curve')  # Blue for Smoothed Curve
 
-# ax[1,3].plot(elapsed_time_201, sol_tanks[0][1][:, 3]-sol_tanks[0][1][0,3], color = 'red',label=f'Temperature Tank {1}')
+ax[1,3].plot(elapsed_time_201, sol_tanks[0][1][:, 3]-sol_tanks[0][1][0,3], color = 'red',label=f'Temperature Tank {1}')
 ax[1,3].set_title('T201 Data')
 ax[1,3].set_xlabel('Elapsed Time (min)')
 ax[1,3].grid(True)
