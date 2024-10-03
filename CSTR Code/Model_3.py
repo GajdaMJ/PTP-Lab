@@ -90,7 +90,6 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     }
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
 
-
     sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300)
     return sol_me
 
@@ -114,6 +113,7 @@ def der_func(t,C, parameters):
     reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) 
 
     total_flow = flow[0]+flow[1]
+    
     #Differential equations
     dcdt[0] =  (total_flow/V)*(C_in_w - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
     dcdt[1] =  (total_flow/V)*(C_in_AAH - C[1])  - reaction_rate  # Anhydride Concentration derv
@@ -150,33 +150,40 @@ def temp_extract(data, x="T200_PV", offset=0):
 
     return elapsed_time, temp_values
 
-# Make until line 167 a function
-data_22c = np.genfromtxt('Data\\CSTR\\23.09 22c.csv', delimiter=';', dtype=None, names=True, encoding=None)
+def data_extract(data_path):
 
-#Get temperature
-elapsed_time_22c, temp_22c = temp_extract(data_22c) 
+    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None)
 
-#Get AAH Flowrate
-elapsed_time_22c_aah, aah_flowrate_22c_vector = temp_extract(data_22c, x="P120_Flow")
+    #Get temperature
+    elapsed_time, temp = temp_extract(data_numpy) 
 
-#Get Water Flowrate
-elapsed_time_22c_water, water_flowrate_22c_vector = temp_extract(data_22c, x='P100_Flow')
+    #Get AAH Flowrate
+    elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
 
-initial_temperature = np.min(temp_22c)
-aah_flowrate_22c = np.median(aah_flowrate_22c_vector)
-water_flowrate_22c = np.median(water_flowrate_22c_vector)
+    #Get Water Flowrate
+    elapsed_time_water, water_flowrate_vector = temp_extract(data_numpy, x='P100_Flow')
+
+    initial_temperature = np.min(temp)
+    aah_flowrate = np.median(aah_flowrate_vector)
+    water_flowrate = np.median(water_flowrate_vector)
+    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
+
+
+if __name__ == '__main__':
+    data_22c = data_extract('Data\\CSTR\\23.09 22c.csv')
 
 
 
-sol_me = CSTR_model(initial_temperature, water_flowrate_22c, aah_flowrate_22c, V=567)
 
-# plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-# plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
-plt.plot(elapsed_time_22c, temp_22c, label='real')
-plt.xlabel('Time (minutes)')
-plt.xlim(0, np.max(elapsed_time_22c))
-plt.ylabel('Temperature')
-plt.legend()
-plt.title('Temperature')
-plt.show()
+    sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
+
+    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
+    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
+    plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
+    plt.plot(data_22c[0], data_22c[1], label='real')
+    plt.xlabel('Time (minutes)')
+    plt.xlim(0, np.max(data_22c[1]))
+    plt.ylabel('Temperature')
+    plt.legend()
+    plt.title('Temperature')
+    plt.show()
