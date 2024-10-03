@@ -184,7 +184,7 @@ def temp_extract(data, x, offset=0):
     # Calculate elapsed time in minutes from the start_time
     elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates]
 
-    return elapsed_time, temp_values
+    return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
 # Make until line 167 a function
 my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
@@ -198,15 +198,15 @@ results = {}
 
 # Loop over the t_values and extract values
 for t_value in t_values:
-    elap_time, temp_c = temp_extract(my_data, t_value)
+    elap_time, temp_c, offset_time = temp_extract(my_data, t_value)
     results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
 
 
 #Get AAH Flowrate
-elapsed_time_c_aah, aah_flowrate_c_vector = temp_extract(my_data, x="P120_Flow")
+elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = temp_extract(my_data, x="P120_Flow")
 
 #Get Water Flowrate
-elapsed_time_c_water, water_flowrate_c_vector = temp_extract(my_data, x='P100_Flow')
+elapsed_time_c_water, water_flowrate_c_vector, offset_time = temp_extract(my_data, x='P100_Flow')
 
 initial_temperature = np.min(temp_c)
 aah_flowrate_c = np.median(aah_flowrate_c_vector)
@@ -230,7 +230,8 @@ for i in range(0,8):
 # Plot for 208 data
     #extracting the temperature and plotting it
     ax[i].plot(results[t_values[-i]]['elapsed_time'], np.array(results[t_values[-i]]['temperature']) - results[t_values[-i]]['temperature'][0])
-    ax[i].plot(results[t_values[i]]['elapsed_time'], sol_me[i][1][:101,3]- sol_me[i][1][0,3])
+    ax[i].plot([t - offset_time for t in results[t_values[i]]['elapsed_time']], sol_me[i][1][:101, 3] - sol_me[i][1][0, 3])
+
     
         
     # ax[i].plot(results[t_values[i]]['elapsed_time'],results[t_value[i]]['temperature']-results[t_value[i]]['temperature'][-1] , 'o', label='T208 Raw Data', color='#ff7f0e')  # Orange for Raw Data
@@ -241,7 +242,8 @@ for i in range(0,8):
     ax[i].set_xlabel('Elapsed Time (min)')
     ax[i].set_ylabel('Temperature (°C)')
     ax[i].grid(True)
-    ax[i].legend()
+    ax[i].set_xlim(0,15)
+    #ax[i].legend()
 
 # Adjust layout to prevent label overlap and set a global title
 fig.suptitle('T200_PV Temperature Data over Time', fontsize=16)
