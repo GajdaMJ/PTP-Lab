@@ -46,51 +46,14 @@ print(f"Fitted T0: {T0_fit:.2f} K, Fitted Tf: {Tf_fit:.2f} K, Fitted k: {k_fit:.
 # Generate fitted data for plotting
 fitted_temps = temperature_model(np.array(filtered_time), *popt)
 
+# Compute dT/dt using numpy's gradient
+dT_dt = np.gradient(fitted_temps, filtered_time)
 
-def temperature_derivative(t, T0, Tf, k):
-    return -k * (T0 - Tf) * np.exp(-k * t)
-
-# Generate the derivative values using the fitted parameters
-dT_dt_fitted = temperature_derivative(np.array(filtered_time), *popt)
-
-# Plotting the results
-plt.figure(figsize=(12, 6))
-
-# Plot temperature data
-plt.subplot(2, 1, 1)
-plt.plot(filtered_time, filtered_temp, label='Temperature Data (27°C)', marker='o', linestyle='-', color='blue')
-plt.plot(filtered_time, fitted_temps, label='Fitted Curve', linestyle='--', color='red')
-plt.xlabel('Elapsed Time (minutes)')
-plt.ylabel('Temperature (K)')
-plt.title('Temperature vs. Time at 27°C (Filtered for 4 < t < 32.5 minutes)')
-plt.legend()
-plt.grid()
-
-# Plot dT/dt
-plt.subplot(2, 1, 2)
-plt.plot(filtered_time, dT_dt_fitted, label='Rate of Change of Temperature (dT/dt)', marker='o', linestyle='-', color='green')
-plt.xlabel('Elapsed Time (minutes)')
-plt.ylabel('dT/dt (K/min)')
-plt.title('Rate of Change of Temperature vs. Time')
-plt.legend()
-plt.grid()
-
-plt.tight_layout()
-plt.show()
-
-
-A = 10  # Example value for A
-B = 0.05  # Example value for B
-H = 2  # Example value for H
-K = 1  # Example value for K
-
-# Calculate dT/dt using the given equation
-dT_dt_model = A - B * np.array(filtered_temp) - H * K
-
-# Plot dT/dt vs. T(t)
-plt.plot(filtered_temp, dT_dt_model, marker='o', linestyle='-', color='purple')
+# Plot dT/dt vs T(t)
+plt.figure(figsize=(10, 6))
+plt.plot(fitted_temps, dT_dt, marker='o', linestyle='-', color='blue')
 plt.xlabel('Temperature (K)')
 plt.ylabel('dT/dt (K/min)')
-plt.title('Rate of Change of Temperature (dT/dt) vs. Temperature (T)')
+plt.title('Rate of Change of Temperature vs Temperature at 27°C')
 plt.grid()
 plt.show()
