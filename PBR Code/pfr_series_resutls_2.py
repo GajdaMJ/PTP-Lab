@@ -40,7 +40,7 @@ def master_function(fun,tspan, y0, method='rk4', number_of_points=100):
         return 'Unknown method specified. Check documentation for supported methods' # In case an unknown method is specified
     return t, y
 
-def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
+def CSTR_series_model(T,fv1,fv2, V=137, tspan = [0,3600]):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -51,7 +51,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     tspan = list of evaluation time in units seconds (default set to [0,3600]) \n
     This function was built for the course "Practical Process Technology (6P4X0)" 
     '''
-    v_cstr= V/7 #devide the pfr volume by the number of reactors
+    v_pfr= V/7 #devide the pfr volume by the number of reactors
 
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
@@ -76,7 +76,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
         "Inlet temperature": T+273.15,
         "flow": flow_array,
-        "V": v_cstr,  # Volume in ml
+        "V": v_pfr,  # Volume in ml
         "k0": 7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
@@ -93,7 +93,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
 
     # Initialize list of solutions for tanks 2 to 7
     sol_tanks = [sol_tank1]
-    for tank_num in range(1, 8):
+    for tank_num in range(2, 8):
         sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution>
         sol_tank_current = np.zeros_like(sol_tank_prev)  # Prepare to store the current solution
         
@@ -174,9 +174,6 @@ def temp_extract(data, x, offset=0):
             start_time = flow_dates[i]
             break
 
-    if start_time is None: #could be removed
-        raise ValueError("No flow transition from < 1 to > 1 found in the data.")
-
     # Extract temperature data starting from the transition point
     temp_rows = data[data['TagName'] == x]
     valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]]
@@ -192,7 +189,6 @@ def temp_extract(data, x, offset=0):
 # Make until line 167 a function
 my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
-
 #Get temperature    
 # Define the list of t_values
 t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
@@ -206,7 +202,6 @@ for t_value in t_values:
     results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
 
 
-
 #Get AAH Flowrate
 elapsed_time_c_aah, aah_flowrate_c_vector = temp_extract(my_data, x="P120_Flow")
 
@@ -217,17 +212,16 @@ initial_temperature = np.min(temp_c)
 aah_flowrate_c = np.median(aah_flowrate_c_vector)
 water_flowrate_c = np.median(water_flowrate_c_vector)
 
-
-
-sol_me = CSTR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=137)
+#solving the 
+sol_me = CSTR_series_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=137)
 
 #list of temp probes and their labels
 t_label = ["t9", "t8", 't7', 't6', 't5', 't4', 't3', 't2', 't1']
 
-print(results[t_values[0]]['elapsed_time'])
 
-plt.plot(results[t_values[0]]['elapsed_time'],results[t_values[0]]['temperature'])
-plt.plot(results[t_values[0]]['elapsed_time'], sol_me[7][1][:101, 3]- sol_me[7][1][0,3])
+plt.plot(results[t_values[0]]['elapsed_time'], np.array(results[t_values[0]]['temperature']) - results[t_values[0]]['temperature'][0])
+plt.plot(results[t_values[0]]['elapsed_time'], sol_me[6][1][:101,3]- sol_me[6][1][0,3])
+
 plt.show()
 
 # # Plot the data
@@ -253,14 +247,4 @@ plt.show()
 # # Show the plot
 # plt.show()
 
-# # # # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-# # # # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-# # # plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
-# # # plt.plot(elapsed_time_c, temp_c, label='real')
-# # # plt.xlabel('Time (minutes)')
-# # # plt.xlim(0, np.max(elapsed_time_22c))
-# # # plt.ylabel('Temperature')
-# # # plt.legend()
-# # # plt.title('Temperature')
-# # # plt.show()
 
