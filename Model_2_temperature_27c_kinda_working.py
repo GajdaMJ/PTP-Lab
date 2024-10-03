@@ -110,7 +110,7 @@ sol_tank1 = master_function(lambda t, C: der_func(t, C, params), tspan, xini, me
 
 # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
 # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-plt.plot(sol_me[0], sol_me[1][:, 3]-273.15, label='temp')
+plt.plot(sol_tank1[0], sol_tank1[1][:, 3]-273.15, label='temp')
 
 plt.xlabel('time')
 plt.ylabel('Temperature')

@@ -1,9 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 from datetime import datetime
-# Assume reaction is 1st order wrt both components
-# Assume isothermal (no exotherm)
-# Assume constant density
+
 
 def master_function(fun,tspan, y0, method='rk4', number_of_points=100):
     '''General function to solve system of differential equations. Does not work on single differential equations. \n
@@ -53,7 +51,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     tspan = list of evaluation time in units seconds (default set to [0,3600]) \n
     This function was built for the course "Practical Process Technology (6P4X0)" 
     '''
-    v_cstr=V
+    v_cstr= V/7 #devide the pfr volume by the number of reactors
 
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
@@ -91,10 +89,24 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
 
 
-    sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300)
-    return sol_me
+    sol_tank1 = master_function(lambda t, C: der_func_first_reactor(t, C, params), tspan, xini, method='rk4', number_of_points=300)
 
-def der_func(t,C, parameters):
+    # Initialize list of solutions for tanks 2 to 7
+    sol_tanks = [sol_tank1]
+    for tank_num in range(1, 8):
+        sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution>
+        sol_tank_current = np.zeros_like(sol_tank_prev)  # Prepare to store the current solution
+        
+        for i, t in enumerate(sol_tanks[-1][0]):
+            c_old = sol_tank_prev[i, :]  # Get previous tank's output at current time step
+            sol_tank = master_function(lambda t, C: der_func_other_reactors(t, C, params, c_old), [t, t + (tspan[1] - tspan[0]) / 100], c_old, method='rk4', number_of_points=1)
+            sol_tank_current[i, :] = sol_tank[1][-1, :]  # Store current step
+
+        sol_tanks.append((sol_tanks[-1][0], sol_tank_current))  # Append current tank's solution
+
+    return sol_tanks
+
+def der_func_first_reactor(t,C, parameters):
     # Initializing derivative vector
     dcdt = np.zeros(4)
 
@@ -121,7 +133,34 @@ def der_func(t,C, parameters):
     dcdt[3] =  (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
-def temp_extract(data, x="T200_PV", offset=0):
+def der_func_other_reactors(t,C, parameters, c_old):
+    # Initializing derivative vector
+    dcdt = np.zeros(4)
+
+    # Getting parameters
+    C_in_w = parameters['C_in_water']
+    C_in_AAH = parameters['C_in_AAH']
+    flow = parameters['flow']
+    V = parameters['V']
+    k0 = parameters['k0']
+    Ea = parameters['Ea']
+    R = parameters['R']
+    H = parameters['H']
+    rho = parameters['rho']
+    cp = parameters['cp']
+    inlet_temp = parameters["Inlet temperature"]
+    
+    reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) 
+
+    total_flow = flow[0]+flow[1]
+    #Differential equations
+    dcdt[0] =  (total_flow/V)*(c_old[0] - C[0]) - reaction_rate # reaction_rate # Water Concentration derv
+    dcdt[1] =  (total_flow/V)*(c_old[1] - C[1])  - reaction_rate  # Anhydride Concentration derv
+    dcdt[2] =  (total_flow/V)*(c_old[2] - C[2]) + 2*reaction_rate # 2*reaction_rate # Acetic acid 
+    dcdt[3] =  (total_flow/V) * (c_old[3]-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
+    return dcdt
+
+def temp_extract(data, x, offset=0):
     # Extract the flow data to determine the starting time
     flow_rows = data[data['TagName'] == "P120_Flow"]
     valid_flow_rows = [row for row in flow_rows if row['vValue'] not in ['(null)', None]]
@@ -135,7 +174,7 @@ def temp_extract(data, x="T200_PV", offset=0):
             start_time = flow_dates[i]
             break
 
-    if start_time is None:
+    if start_time is None: #could be removed
         raise ValueError("No flow transition from < 1 to > 1 found in the data.")
 
     # Extract temperature data starting from the transition point
@@ -151,32 +190,77 @@ def temp_extract(data, x="T200_PV", offset=0):
     return elapsed_time, temp_values
 
 # Make until line 167 a function
-data_22c = np.genfromtxt('Data\\CSTR\\23.09 22c.csv', delimiter=';', dtype=None, names=True, encoding=None)
+my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
-#Get temperature
-elapsed_time_22c, temp_22c = temp_extract(data_22c) 
+
+#Get temperature    
+# Define the list of t_values
+t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
+
+# Initialize a dictionary to store the results
+results = {}
+
+# Loop over the t_values and extract values
+for t_value in t_values:
+    elap_time, temp_c = temp_extract(my_data, t_value)
+    results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
+
+
 
 #Get AAH Flowrate
-elapsed_time_22c_aah, aah_flowrate_22c_vector = temp_extract(data_22c, x="P120_Flow")
+elapsed_time_c_aah, aah_flowrate_c_vector = temp_extract(my_data, x="P120_Flow")
 
 #Get Water Flowrate
-elapsed_time_22c_water, water_flowrate_22c_vector = temp_extract(data_22c, x='P100_Flow')
+elapsed_time_c_water, water_flowrate_c_vector = temp_extract(my_data, x='P100_Flow')
 
-initial_temperature = np.min(temp_22c)
-aah_flowrate_22c = np.median(aah_flowrate_22c_vector)
-water_flowrate_22c = np.median(water_flowrate_22c_vector)
+initial_temperature = np.min(temp_c)
+aah_flowrate_c = np.median(aah_flowrate_c_vector)
+water_flowrate_c = np.median(water_flowrate_c_vector)
 
 
 
-sol_me = CSTR_model(initial_temperature, water_flowrate_22c, aah_flowrate_22c, V=567)
+sol_me = CSTR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=137)
 
-# plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-# plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
-plt.plot(elapsed_time_22c, temp_22c, label='real')
-plt.xlabel('Time (minutes)')
-plt.xlim(0, np.max(elapsed_time_22c))
-plt.ylabel('Temperature')
-plt.legend()
-plt.title('Temperature')
+#list of temp probes and their labels
+t_label = ["t9", "t8", 't7', 't6', 't5', 't4', 't3', 't2', 't1']
+
+print(results[t_values[0]]['elapsed_time'])
+
+plt.plot(results[t_values[0]]['elapsed_time'],results[t_values[0]]['temperature'])
+plt.plot(results[t_values[0]]['elapsed_time'], sol_me[7][1][:101, 3]- sol_me[7][1][0,3])
 plt.show()
+
+# # Plot the data
+# fig, ax = plt.subplots(2, 4, figsize=(30, 10), sharex=True, sharey=True)
+# ax = ax.flatten()
+# for i in range(0,8):
+# # Plot for 208 data
+#     #extracting the temperature and plotting it
+#     ax[i].plot(results[t_values[i]]['elapsed_time'],results[t_value[i]]['temperature']-results[t_value[i]]['temperature'][-1] , 'o', label='T208 Raw Data', color='#ff7f0e')  # Orange for Raw Data
+
+#     # ax[i].plot(elapsed_time_interp, temp_208_smooth - temp_208[0], '-', color='#1f77b4', label='T208 Smoothed Curve')  # Blue for Smoothed Curi
+#     # ax[i].plot(elapsed_time_208, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {8}')
+#     ax[i].set_title('T208 Data')
+#     ax[i].set_xlabel('Elapsed Time (min)')
+#     ax[i].set_ylabel('Temperature (°C)')
+#     ax[i].grid(True)
+#     ax[i].legend()
+
+# # Adjust layout to prevent label overlap and set a global title
+# fig.suptitle('T200_PV Temperature Data over Time', fontsize=16)
+# plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust for title space
+
+# # Show the plot
+# plt.show()
+
+# # # # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
+# # # # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
+# # # plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
+# # # plt.plot(elapsed_time_c, temp_c, label='real')
+# # # plt.xlabel('Time (minutes)')
+# # # plt.xlim(0, np.max(elapsed_time_22c))
+# # # plt.ylabel('Temperature')
+# # # plt.legend()
+# # # plt.title('Temperature')
+# # # plt.show()
+
