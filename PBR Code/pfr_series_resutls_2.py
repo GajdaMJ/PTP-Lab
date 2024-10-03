@@ -230,7 +230,7 @@ for i in range(0,8):
 # Plot for 208 data
     #extracting the temperature and plotting it
     ax[i].plot(results[t_values[-i]]['elapsed_time'], np.array(results[t_values[-i]]['temperature']) - results[t_values[-i]]['temperature'][0])
-    ax[i].plot(results[t_values[i]]['elapsed_time'], sol_me[i][1][:101,3]- sol_me[i][1][0,3])
+    ax[i].plot(sol_me[i][0], sol_me[i][1][:,3]- sol_me[i][1][0,3])
     
         
     # ax[i].plot(results[t_values[i]]['elapsed_time'],results[t_value[i]]['temperature']-results[t_value[i]]['temperature'][-1] , 'o', label='T208 Raw Data', color='#ff7f0e')  # Orange for Raw Data
@@ -240,6 +240,7 @@ for i in range(0,8):
     ax[i].set_title(f'reactor {i} Data')
     ax[i].set_xlabel('Elapsed Time (min)')
     ax[i].set_ylabel('Temperature (°C)')
+    ax[i].set_xlim(0,15)
     ax[i].grid(True)
     ax[i].legend()
 
