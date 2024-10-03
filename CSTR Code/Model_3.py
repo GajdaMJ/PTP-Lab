@@ -128,19 +128,15 @@ def temp_extract(data, x="T200_PV", offset=0):
     flow_values = [float(row['vValue']) for row in valid_flow_rows]
     flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
 
-    # Find the first point where flow transitions from < 1 to > 1
+
     start_time = None
     for i in range(1, len(flow_values)):
-        if flow_values[i-1] < 1 and flow_values[i] > 1:
+        if flow_values[i-1] < 1 and flow_values[i] > 1:     # Loop that checks when the AAH pump is turned on and sets that as the start time
             start_time = flow_dates[i]
             break
 
-    if start_time is None:
-        raise ValueError("No flow transition from < 1 to > 1 found in the data.")
-
-    # Extract temperature data starting from the transition point
-    temp_rows = data[data['TagName'] == x]
-    valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]]
+    temp_rows = data[data['TagName'] == x]  # Only choose the rows for that particular instrument 
+    valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]] # You want to remove the values when theres null otherwise it does weird things
     
     temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows]
     temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
