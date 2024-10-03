@@ -173,7 +173,7 @@ def temp_extract(data, x, offset=0):
         if flow_values[i-1] < 1 and flow_values[i] > 1:
             start_time = flow_dates[i]
             break
-
+    
     # Extract temperature data starting from the transition point
     temp_rows = data[data['TagName'] == x]
     valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]]
