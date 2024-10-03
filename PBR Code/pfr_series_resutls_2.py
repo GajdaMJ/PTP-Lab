@@ -77,7 +77,7 @@ def CSTR_series_model(T,fv1,fv2, V=137, tspan = [0,3600]):
         "Inlet temperature": T+273.15,
         "flow": flow_array,
         "V": v_pfr,  # Volume in ml
-        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 6e5,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
         "Ea": 45622.34,             # Activation energy (J/mol)
@@ -224,7 +224,7 @@ t_label = ["t9", "t8", 't7', 't6', 't5', 't4', 't3', 't2', 't1']
 # plt.show()
 
 # Plot the data
-fig, ax = plt.subplots(2, 4, figsize=(30, 10), sharex=True, sharey=True)
+fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
 ax = ax.flatten()
 for i in range(0,7):
 # Plot for 208 data
@@ -237,7 +237,7 @@ for i in range(0,7):
 
     # ax[i].plot(elapsed_time_interp, temp_208_smooth - temp_208[0], '-', color='#1f77b4', label='T208 Smoothed Curve')  # Blue for Smoothed Curi
     # ax[i].plot(elapsed_time_208, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {8}')
-    ax[i].set_title('T20{i} Data')
+    ax[i].set_title(f'reactor {i} Data')
     ax[i].set_xlabel('Elapsed Time (min)')
     ax[i].set_ylabel('Temperature (°C)')
     ax[i].grid(True)
