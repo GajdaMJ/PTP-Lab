@@ -51,7 +51,7 @@ def CSTR_series_model(T,fv1,fv2, V=137, tspan = [0,3600]):
     tspan = list of evaluation time in units seconds (default set to [0,3600]) \n
     This function was built for the course "Practical Process Technology (6P4X0)" 
     '''
-    v_pfr= V/7 #devide the pfr volume by the number of reactors
+    v_pfr= V/8 #devide the pfr volume by the number of reactors
 
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
@@ -93,7 +93,7 @@ def CSTR_series_model(T,fv1,fv2, V=137, tspan = [0,3600]):
 
     # Initialize list of solutions for tanks 2 to 7
     sol_tanks = [sol_tank1]
-    for tank_num in range(2, 8):
+    for tank_num in range(1, 8):
         sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution>
         sol_tank_current = np.zeros_like(sol_tank_prev)  # Prepare to store the current solution
         
@@ -226,7 +226,7 @@ t_label = ["t9", "t8", 't7', 't6', 't5', 't4', 't3', 't2', 't1']
 # Plot the data
 fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
 ax = ax.flatten()
-for i in range(0,7):
+for i in range(0,8):
 # Plot for 208 data
     #extracting the temperature and plotting it
     ax[i].plot(results[t_values[-i]]['elapsed_time'], np.array(results[t_values[-i]]['temperature']) - results[t_values[-i]]['temperature'][0])
