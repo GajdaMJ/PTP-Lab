@@ -72,11 +72,11 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
 
     flow_array = [fv_w_dm3_s, fv_a_dm3_s]
 
-    #Thermodynamic constants
-    params = {
+    
+    params = { # Stores the relevant thermodynamic constants as a dictionary 
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
-        "Inlet temperature": T+273.15,
+        "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
         "k0": 7e6,          # Reaction rate constant (ml/mol/s)
@@ -89,15 +89,23 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "cp": 4.186             # Heat capacity (J/g/K)
     }
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
+    # 
 
-    sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300)
+    sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300) #Master function is a differential equation solver made for Numerical Methods.
     return sol_me
 
 def der_func(t,C, parameters):
+    '''This function contains the differential equations to solve the reaction A+B->2C in an adiabatic 
+    CSTR. \n
+    t=time (seconds) \n
+    c = Concentration vector like [c_water, c_AAH, c_AA, Temperature]\n
+    parameters = dictionary containing thermodynamic constants
+    '''
     # Initializing derivative vector
     dcdt = np.zeros(4)
+    # array of 4 zeros corresponding to [c_water/dt, c_AAH/dt, c_AA/dt, dT/dt]
 
-    # Getting parameters
+    # Getting parameters out of our dictionary 
     C_in_w = parameters['C_in_water']
     C_in_AAH = parameters['C_in_AAH']
     flow = parameters['flow']
@@ -110,25 +118,29 @@ def der_func(t,C, parameters):
     cp = parameters['cp']
     inlet_temp = parameters["Inlet temperature"]
     
-    reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) 
+    reaction_rate = C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) # reaction rate is repeated so just calculate once
 
     total_flow = flow[0]+flow[1]
     
     #Differential equations
-    dcdt[0] =  (total_flow/V)*(C_in_w - C[0])    - reaction_rate # reaction_rate # Water Concentration derv
+    dcdt[0] =  (total_flow/V)*(C_in_w - C[0])    - reaction_rate # Water Concentration derv
     dcdt[1] =  (total_flow/V)*(C_in_AAH - C[1])  - reaction_rate  # Anhydride Concentration derv
-    dcdt[2] =  (total_flow/V)*(0 - C[2]) + 2*reaction_rate # 2*reaction_rate # Acetic acid 
+    dcdt[2] =  (total_flow/V)*(0 - C[2]) + 2*reaction_rate  # Acetic acid 
     dcdt[3] =  (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
     return dcdt
 
 def temp_extract(data, x="T200_PV", offset=0):
+    '''Function to extract data from csv files\n
+    data = data path for your csv file. Give as a string \n
+    x = Name of the instrument that you want. Default set to T200_PV (CSTR internal temperature) \n
+    offset = linear offset for values. Default set to zero \n
+    returns elapsed time and values for your
+    '''
     # Extract the flow data to determine the starting time
     flow_rows = data[data['TagName'] == "P120_Flow"]
     valid_flow_rows = [row for row in flow_rows if row['vValue'] not in ['(null)', None]]
     flow_values = [float(row['vValue']) for row in valid_flow_rows]
     flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
-
-
     start_time = None
     for i in range(1, len(flow_values)):
         if flow_values[i-1] < 1 and flow_values[i] > 1:     # Loop that checks when the AAH pump is turned on and sets that as the start time
@@ -138,7 +150,7 @@ def temp_extract(data, x="T200_PV", offset=0):
     temp_rows = data[data['TagName'] == x]  # Only choose the rows for that particular instrument 
     valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]] # You want to remove the values when theres null otherwise it does weird things
     
-    temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows]
+    temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows] #Converts the weird csv time format to python
     temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
 
     # Calculate elapsed time in minutes from the start_time
