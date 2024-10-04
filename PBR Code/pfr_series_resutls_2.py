@@ -202,6 +202,9 @@ for t_value in t_values:
     results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
 
 
+test_time, test_temp, test_x = temp_extract(my_data,"T201_PV")
+
+
 #Get AAH Flowrate
 elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = temp_extract(my_data, x="P120_Flow")
 
@@ -219,32 +222,22 @@ sol_me = CSTR_series_model(initial_temperature, water_flowrate_c, aah_flowrate_c
 t_label = ["t9", "t8", 't7', 't6', 't5', 't4', 't3', 't2', 't1']
 
 
-# plt.plot(results[t_values[0]]['elapsed_time'], np.array(results[t_values[0]]['temperature']) - results[t_values[0]]['temperature'][0])
-# plt.plot(results[t_values[0]]['elapsed_time'], sol_me[6][1][:101,3]- sol_me[6][1][0,3])
-# plt.show()
-
 # Plot the data
 fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
 ax = ax.flatten()
 for i in range(0,8):
 # Plot for 208 data
     #extracting the temperature and plotting it
-    ax[i].plot(results[t_values[-i]]['elapsed_time'], np.array(results[t_values[-i]]['temperature']) - results[t_values[-i]]['temperature'][0])
-    ax[i].plot([t - offset_time for t in results[t_values[i]]['elapsed_time']], sol_me[i][1][:101, 3] - sol_me[i][1][0, 3])
-
-    
-        
-    # ax[i].plot(results[t_values[i]]['elapsed_time'],results[t_value[i]]['temperature']-results[t_value[i]]['temperature'][-1] , 'o', label='T208 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-
-    # ax[i].plot(elapsed_time_interp, temp_208_smooth - temp_208[0], '-', color='#1f77b4', label='T208 Smoothed Curve')  # Blue for Smoothed Curi
-    # ax[i].plot(elapsed_time_208, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {8}')
-    ax[i].set_title(f'reactor {i} Data')
+    ax[i].plot(results[t_values[-(i+1)]]['elapsed_time'], np.array(results[t_values[-(i+1)]]['temperature']) - results[t_values[-(i+1)]]['temperature'][0],color='#ff7f0e',label= 'real')
+    ax[i].plot([t - offset_time for t in results[t_values[i]]['elapsed_time']], sol_me[i][1][:101, 3] - sol_me[i][1][0, 3], color='#1f77b4',label = 'model')
+    ax[i].set_title(f'reactor {i + 1} Data')
     ax[i].set_xlabel('Elapsed Time (min)')
     ax[i].set_ylabel('Temperature (°C)')
     ax[i].set_xlim(0,15)
     ax[i].grid(True)
     ax[i].set_xlim(0,15)
-    #ax[i].legend()
+    ax[i].legend()
+
 
 # Adjust layout to prevent label overlap and set a global title
 fig.suptitle('T200_PV Temperature Data over Time', fontsize=16)
