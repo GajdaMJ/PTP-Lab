@@ -59,13 +59,14 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
     fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
 
-
-    
     #Chemical constants
+
+    #Water
     mm_water = 18.01528 # (g/mol)
     rho_water = 0.999842 # (g/ml)
     cw_pure = rho_water/mm_water # (mol/ml)
 
+    #Acetic acid
     mm_AAH = 102.089 # (g/mol)
     rho_AAH = 1.082 # (g/ml)
     caah_pure = rho_AAH/mm_AAH # (mol/ml)
@@ -88,9 +89,8 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "rho": 1,            # Density (g/ml)
         "cp": 4.186             # Heat capacity (J/g/K)
     }
-    xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
-    # 
 
+    xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
     sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300) #Master function is a differential equation solver made for Numerical Methods.
     return sol_me
 
