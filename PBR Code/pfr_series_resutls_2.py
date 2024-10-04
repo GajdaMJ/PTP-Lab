@@ -199,7 +199,7 @@ results = {}
 # Loop over the t_values and extract values
 for t_value in t_values:
     elap_time, temp_c, offset_time = temp_extract(my_data, t_value)
-    results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
+    results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
 
 
 test_time, test_temp, test_x = temp_extract(my_data,"T201_PV")
@@ -229,7 +229,8 @@ for i in range(0,8):
 # Plot for 208 data
     #extracting the temperature and plotting it
     ax[i].plot(results[t_values[-(i+1)]]['elapsed_time'], np.array(results[t_values[-(i+1)]]['temperature']) - results[t_values[-(i+1)]]['temperature'][0],color='#ff7f0e',label= 'real')
-    ax[i].plot([t - offset_time for t in results[t_values[i]]['elapsed_time']], sol_me[i][1][:101, 3] - sol_me[i][1][0, 3], color='#1f77b4',label = 'model')
+    ax[i].plot(np.array(results[t_values[-(i+1)]]['elapsed_time']) - results[t_values[-(i+1)]]['offset_time'], sol_me[i][1][:101, 3] - sol_me[i][1][0, 3], color='#1f77b4',label = 'model')
+
     ax[i].set_title(f'reactor {i + 1} Data')
     ax[i].set_xlabel('Elapsed Time (min)')
     ax[i].set_ylabel('Temperature (°C)')
