@@ -91,18 +91,18 @@ def CSTR_series_model(T,fv1,fv2, V=137, tspan = [0,3600]):
 
     sol_tank1 = master_function(lambda t, C: der_func_first_reactor(t, C, params), tspan, xini, method='rk4', number_of_points=300)
 
-    # Initialize list of solutions for tanks 2 to 7
+    # Solves for reactors 2 to 8 
     sol_tanks = [sol_tank1]
     for tank_num in range(1, 8):
-        sol_tank_prev = sol_tanks[-1][1]  # Take the previous tank solution>
-        sol_tank_current = np.zeros_like(sol_tank_prev)  # Prepare to store the current solution
+        sol_tank_prev = sol_tanks[-1][1]  #copies the whole last take solution
+        sol_tank_current = np.zeros_like(sol_tank_prev)  #prepares an array of zeros which will later be replaced by values 
         
         for i, t in enumerate(sol_tanks[-1][0]):
-            c_old = sol_tank_prev[i, :]  # Get previous tank's output at current time step
+            c_old = sol_tank_prev[i, :]  #previous tanks solution
             sol_tank = master_function(lambda t, C: der_func_other_reactors(t, C, params, c_old), [t, t + (tspan[1] - tspan[0]) / 100], c_old, method='rk4', number_of_points=1)
-            sol_tank_current[i, :] = sol_tank[1][-1, :]  # Store current step
+            sol_tank_current[i, :] = sol_tank[1][-1, :]  
 
-        sol_tanks.append((sol_tanks[-1][0], sol_tank_current))  # Append current tank's solution
+        sol_tanks.append((sol_tanks[-1][0], sol_tank_current))  # Appends the current tank's solution 
 
     return sol_tanks
 
@@ -167,7 +167,6 @@ def temp_extract(data, x, offset=0):
     flow_values = [float(row['vValue']) for row in valid_flow_rows]
     flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
 
-    # Find the first point where flow transitions from < 1 to > 1
     start_time = None
     for i in range(1, len(flow_values)):
         if flow_values[i-1] < 1 and flow_values[i] > 1:
@@ -181,28 +180,19 @@ def temp_extract(data, x, offset=0):
     temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows]
     temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
 
-    # Calculate elapsed time in minutes from the start_time
-    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates]
+    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates] # Calculate elapsed time in minutes from the start_time
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
-my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
-#Get temperature    
-# Define the list of t_values
+my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1') #imports the data and saves it as variable
+
+# extracting all temp data
 t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
-
-# Initialize a dictionary to store the results
 results = {}
-
-# Loop over the t_values and extract values
 for t_value in t_values:
     elap_time, temp_c, offset_time = temp_extract(my_data, t_value)
-    results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
-
-
-test_time, test_temp, test_x = temp_extract(my_data,"T201_PV")
-
+    results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
 
 #Get AAH Flowrate
 elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = temp_extract(my_data, x="P120_Flow")
@@ -214,21 +204,14 @@ initial_temperature = np.min(temp_c)
 aah_flowrate_c = np.median(aah_flowrate_c_vector)
 water_flowrate_c = np.median(water_flowrate_c_vector)
 
-#solving the 
-sol_me = CSTR_series_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=137)
+sol_me = CSTR_series_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=137) 
 
-#list of temp probes and their labels
-t_label = ["t9", "t8", 't7', 't6', 't5', 't4', 't3', 't2', 't1']
-
-
-# Plot the data
 fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
 ax = ax.flatten()
 for i in range(0,8):
-# Plot for 208 data
-    #extracting the temperature and plotting it
     ax[i].plot(results[t_values[-(i+1)]]['elapsed_time'], np.array(results[t_values[-(i+1)]]['temperature']) - results[t_values[-(i+1)]]['temperature'][0],color='#ff7f0e',label= 'real')
-    ax[i].plot([t - offset_time for t in results[t_values[i]]['elapsed_time']], sol_me[i][1][:101, 3] - sol_me[i][1][0, 3], color='#1f77b4',label = 'model')
+    ax[i].plot(np.array(results[t_values[-(i+1)]]['elapsed_time']) - results[t_values[-(i+1)]]['offset_time'], sol_me[i][1][:101, 3] - sol_me[i][1][0, 3], color='#1f77b4',label = 'model')
+
     ax[i].set_title(f'reactor {i + 1} Data')
     ax[i].set_xlabel('Elapsed Time (min)')
     ax[i].set_ylabel('Temperature (°C)')
@@ -236,13 +219,8 @@ for i in range(0,8):
     ax[i].grid(True)
     ax[i].set_xlim(0,15)
     ax[i].legend()
-
-
-# Adjust layout to prevent label overlap and set a global title
-fig.suptitle('T200_PV Temperature Data over Time', fontsize=16)
-plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust for title space
-
-# Show the plot
+fig.suptitle('T200_PV Temperature Data over Time', fontsize=16) # Adjust layout to prevent label overlap and set a global title
+plt.tight_layout(rect=[0, 0, 1, 0.95])  # fixes overlap
 plt.show()
 
 
