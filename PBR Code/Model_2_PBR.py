@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.sparse as sps
-import scipy.sparse.linalg as spss
 
 x_end = 1 # meter
 tend = 4
@@ -9,21 +7,18 @@ d = 1e-3
 kr = 1.2 #per second
 
 # mew = volumetric flow / cross sectional area
-diam = 0.04 # meter
+diam = 2.5 # meter
 flow = 6.3e-4 #m^3/s
 mew = flow / (np.pi*(diam**2)/4)
 
 
-def implicit(T, nx, nt, x_end, t_end, fv1,fv2, C, V=137):
+def model_2_pbr(T, fv1,fv2, C, V=137,n):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in unit celsius \n
-    nx = number of steps \n
-    nt = number of time steps \n
-    x_end = the length of the column \n
-    t_end = final time \n
     C = values [Water, AAH, Acitic Acid, Temperature] \n
-    V = volume of the PBR reactor
+    V = volume of the PBR reactor \n
+    n = number of tanks in series \n
     '''
     #Chemical constants
     mm_water = 18.01528 # (g/mol)
@@ -39,6 +34,7 @@ def implicit(T, nx, nt, x_end, t_end, fv1,fv2, C, V=137):
 
     flow_array = [fv_w_dm3_s, fv_a_dm3_s]
     
+    v_pfr = V/n
     #Thermodynamic constants
     params = {
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
@@ -56,63 +52,36 @@ def implicit(T, nx, nt, x_end, t_end, fv1,fv2, C, V=137):
         "cp": 4.186             # Heat capacity (J/g/K)
     }
 
-    dx = x_end/nx
+    #initialize the solution matrix
+    dcdt = np.zeros(4*n)
 
-    v_pfr= V/x #devide the pfr volume by the number of reactors
+    # Getting parameters
+    C_in_w = params['C_in_water']
+    C_in_AAH = params['C_in_AAH']
+    flow = params['flow']
+    V = params['V']
+    k0 = params['k0']
+    Ea = params['Ea']
+    R = params['R']
+    H = params['H']
+    rho = params['rho']
+    cp = params['cp']
+    inlet_temp = params["Inlet temperature"]
 
-    dt = tend/nt
-    x = np.linspace(0,x_end,nx +1) # x is the number of steps (reactors)
-
-    #initializing array for results
-    c = np.zeros((nx+1,4))
-    c[:,0] = C[0] #water fills the whole reactore
-    c[0,1] = C[1]
-    c[0,2] = C[2] 
-    c[:,3] = C[3] #temp is the same across the reactor
+    total_flow = flow[0]+flow[1]
+    #solving for each reactor
+    for i in range(4*n):
+        #for the first reactor it takes the initial conditions
+        if i ==0:
+            dcdt[i] = (total_flow/V)*(C_in_w - C[0]) - C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3]))
+        if i == 1:
+            dcdt[i] = (total_flow/V)*(C_in_AAH - C[1])  - C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3]))
+        if i == 2:
+            dcdt[i] = (total_flow/V)*(0 - C[2]) + 2*C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3])) 
+        if i == 3:
+            dcdt[i] = (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * C[0]*C[1] * k0 * np.exp(-Ea/(R*C[3]))
+        #make a condition for the remain reactors which will not be taking the initial conditions but the outlet of the reactor before
+        
+        elif np.mod(): #np.mod(divident,divisor) with the output being the remainder
     
-    #t = np.linspace(0,tend,nt+1)
-    t = 0
-
-    A = sps.diags([ - mew*dt/(dx), -1 - (-kr)*dt + mew*dt/dx],[0,1], shape = (nx+1,nx+1))
-    A = sps.csr_matrix(A) #efficient to solve using ludecomp
-    A[0,0] = 1
-    A[0,1] = 0
-    A[nx,nx] = 1
-    A[nx,nx-1] = -1 #-1 for zero gradient # 0 for...
-    for i in range(1, nx):
-        if i*dx <0.1 or i*dx>0.9:
-            A[i,i] = A[i,i] - kr*dt
-
-    for n in range (nt):
-        t += dt
-        c_old = np.copy(c)#do not store the solution for every time step
-    
-        b = c_old
-        b[nx]=0
-        c = sps.linalg.spsolve(A,b)
-
-        iplot +=1
-        if (iplot % 10 == 0):
-            plt.title(f"Time = {t:5.3f} s")
-            line[0].set_ydata(c)
-            figure.canvas.draw()
-            figure.canvas.flush_events()
-            iplot = 0
-
-    iplot = 0
-    plt.ion()
-    figure, ax = plt.subplots(figsize = (10,5))
-    line = []
-    line += ax.plot(x,c)
-    plt.title(f"Time = {t:5.3f} s")
-    plt.xlabel("Axial position")
-    plt.ylabel("concentration")
-    plt.xlim(0,x_end)
-    # plt.ylim(0,max(c_l,c_r))
-    plt.grid()
-    plt.pause(40)
-    plt.show()
-
-implicit(10, 1000)
-
-
+        
