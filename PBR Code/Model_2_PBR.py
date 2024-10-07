@@ -6,14 +6,13 @@ import scipy.sparse.linalg as spss
 x_end = 1 # meter
 tend = 4
 d = 1e-3
-c_l = 1
-c_r = 0
 kr = 1.2 #per second
 
 # mew = volumetric flow / cross sectional area
 diam = 0.04 # meter
 flow = 6.3e-4 #m^3/s
 mew = flow / (np.pi*(diam**2)/4)
+
 
 def implicit(T, nx, nt, x_end, t_end, fv1,fv2, C, V=137):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
@@ -65,33 +64,21 @@ def implicit(T, nx, nt, x_end, t_end, fv1,fv2, C, V=137):
     x = np.linspace(0,x_end,nx +1) # x is the number of steps (reactors)
 
     #initializing array for results
-    c = np.zeros(nx+1)
-    c[0] = c_l
-    c[nx] = c_r
-
+    c = np.zeros((nx+1,4))
+    c[:,0] = C[0] #water fills the whole reactore
+    c[0,1] = C[1]
+    c[0,2] = C[2] 
+    c[:,3] = C[3] #temp is the same across the reactor
     
     #t = np.linspace(0,tend,nt+1)
-    fo = d*dt/dx**2
     t = 0
-
-    iplot = 0
-    plt.ion()
-    figure, ax = plt.subplots(figsize = (10,5))
-    line = []
-    line += ax.plot(x,c)
-    plt.title(f"Time = {t:5.3f} s")
-    plt.xlabel("Axial position")
-    plt.ylabel("concentration")
-    plt.xlim(0,x_end)
-    plt.ylim(0,max(c_l,c_r))
-    plt.grid()
 
     A = sps.diags([ - mew*dt/(dx), -1 - (-kr)*dt + mew*dt/dx],[0,1], shape = (nx+1,nx+1))
     A = sps.csr_matrix(A) #efficient to solve using ludecomp
     A[0,0] = 1
     A[0,1] = 0
     A[nx,nx] = 1
-    A[nx,nx-1] = -1 #-1 for xero gradient # 0 for...
+    A[nx,nx-1] = -1 #-1 for zero gradient # 0 for...
     for i in range(1, nx):
         if i*dx <0.1 or i*dx>0.9:
             A[i,i] = A[i,i] - kr*dt
@@ -112,6 +99,17 @@ def implicit(T, nx, nt, x_end, t_end, fv1,fv2, C, V=137):
             figure.canvas.flush_events()
             iplot = 0
 
+    iplot = 0
+    plt.ion()
+    figure, ax = plt.subplots(figsize = (10,5))
+    line = []
+    line += ax.plot(x,c)
+    plt.title(f"Time = {t:5.3f} s")
+    plt.xlabel("Axial position")
+    plt.ylabel("concentration")
+    plt.xlim(0,x_end)
+    # plt.ylim(0,max(c_l,c_r))
+    plt.grid()
     plt.pause(40)
     plt.show()
 
