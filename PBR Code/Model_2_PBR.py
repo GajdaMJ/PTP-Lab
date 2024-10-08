@@ -91,7 +91,10 @@ def model_2_pbr(T,fv1,fv2,V=137,tspan =[0,3600],n=6):
         "rho": 1,            # Density (g/ml)
         "cp": 4.186             # Heat capacity (J/g/K)
     }
-    xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
+    x_cond = [cw_pure,0,0,T+273.15] # Initial Conditions 
+    xini = np.zeros(4*n)
+    
+
     sol_me = master_function(lambda t, C: der_func(t, C, params,n), tspan, xini, method='rk4', number_of_points=300) #Master function is a differential equation solver made for Numerical Methods.
     return sol_me
 
@@ -134,6 +137,7 @@ def der_func(t,C, parameters,n):
         #make a condition for the remain reactors which will not be taking the initial conditions but the outlet of the reactor before
         
         elif np.mod(i,4)==0: #np.mod(divident,divisor) with the output being the remainder
+            print(i,i)
             dcdt[i] = (total_flow/V)*(C[i-4] - C[i]) - C[i]*C[i+1] * k0 * np.exp(-Ea/(R*C[i+3]))
         
         elif np.mod(i,4) == 1:
@@ -147,4 +151,6 @@ def der_func(t,C, parameters,n):
     
     return dcdt
 
-sol_me = model_2_pbr(20, ,fv2,V=137,tspan =[0,3600],n=6)
+sol_me = model_2_pbr(20,100,20,V=137,tspan =[0,3600],n=100)
+
+print(sol_me)
