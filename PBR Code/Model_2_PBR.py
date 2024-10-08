@@ -93,7 +93,24 @@ def model_2_pbr(T,fv1,fv2,V=137,tspan =[0,3600],n=6):
     }
     x_cond = [cw_pure,0,0,T+273.15] # Initial Conditions 
     xini = np.zeros(4*n)
-    
+    for i in range(4*n):
+        if i == 0: 
+            xini[i] = x_cond[0]
+        if i == 1:
+            xini[i] = x_cond[1]
+        if i == 2:
+            xini[i] = x_cond[2]
+        if i == 3:
+            xini[i] = x_cond[3]
+        elif np.mod(i,4)==0:
+            xini[i] = x_cond[0]
+        elif np.mod(i,4)==1:
+            xini[i] = x_cond[1]
+        elif np.mod(i,4)==2:
+            xini[i] = x_cond[2]
+        elif np.mod(i,4)==3:
+            xini[i] = x_cond[3]
+            
 
     sol_me = master_function(lambda t, C: der_func(t, C, params,n), tspan, xini, method='rk4', number_of_points=300) #Master function is a differential equation solver made for Numerical Methods.
     return sol_me
@@ -137,7 +154,6 @@ def der_func(t,C, parameters,n):
         #make a condition for the remain reactors which will not be taking the initial conditions but the outlet of the reactor before
         
         elif np.mod(i,4)==0: #np.mod(divident,divisor) with the output being the remainder
-            print(i,i)
             dcdt[i] = (total_flow/V)*(C[i-4] - C[i]) - C[i]*C[i+1] * k0 * np.exp(-Ea/(R*C[i+3]))
         
         elif np.mod(i,4) == 1:
@@ -154,3 +170,6 @@ def der_func(t,C, parameters,n):
 sol_me = model_2_pbr(20,100,20,V=137,tspan =[0,3600],n=100)
 
 print(sol_me)
+
+plt.plot(sol_me[0],sol_me[1])
+plt.show()
