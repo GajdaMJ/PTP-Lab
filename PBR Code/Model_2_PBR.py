@@ -171,31 +171,33 @@ def der_func(t,C, parameters,n):
 
 sol_me = model_2_pbr(20,100,20,V=137,tspan =[0,3600],n=100)
 
+plt.plot(sol_me[0],sol_me[1])
+plt.show()
 
-elapsed_time = np.zeros(n)
-dc_1 = np.zeros(n)
-dc_2 = np.zeros(n)
-dc_3 = np.zeros(n)
-dT = np.zeros(n)
+# elapsed_time = np.zeros(n)
+# dc_1 = np.zeros(n)
+# dc_2 = np.zeros(n)
+# dc_3 = np.zeros(n)
+# dT = np.zeros(n)
 
-for i in range(4*n):
-    if i == 0: 
-        dc_1[i] = sol_me[1][i]
-        elapsed_time[i] = sol_me[0][i]
-    if i == 1:
-        dc_2[i] = sol_me[1][i]
-    if i == 2:
-        dc_2[i] = sol_me[1][i]
-    if i == 3:
-        dT[i] = sol_me[1][i]
-    elif np.mod(i,4)==0:
-        dc_1[i] = sol_me[1][i]
-        elapsed_time[i] = sol_me[0][i]
-    elif np.mod(i,4)==1:
-        dc_2[i] = sol_me[1][i]
-    elif np.mod(i,4)==2:
-        dc_3[i] = sol_me[1][i]
-    elif np.mod(i,4)==3:
-        dT[i] = sol_me[1][i]
+# for i in range(4*n):
+#     if i == 0: 
+#         dc_1[i] = sol_me[1][i]
+#         elapsed_time[i] = sol_me[0][i]
+#     if i == 1:
+#         dc_2[i] = sol_me[1][i]
+#     if i == 2:
+#         dc_2[i] = sol_me[1][i]
+#     if i == 3:
+#         dT[i] = sol_me[1][i]
+#     elif np.mod(i,4)==0:
+#         dc_1[i] = sol_me[1][i]
+#         elapsed_time[i] = sol_me[0][i]
+#     elif np.mod(i,4)==1:
+#         dc_2[i] = sol_me[1][i]
+#     elif np.mod(i,4)==2:
+#         dc_3[i] = sol_me[1][i]
+#     elif np.mod(i,4)==3:
+#         dT[i] = sol_me[1][i]
         
-print(elapsed_time)
+# print(elapsed_time)
