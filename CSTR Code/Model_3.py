@@ -80,16 +80,16 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 9.092246269480829e+16,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45622.34,             # Activation energy (J/mol)
+        "Ea": 104982.28755856157,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
         "cp": 4.186             # Heat capacity (J/g/K)
     }
-
+    # print(params['C_in_AAH']*params['C_in_water'])
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
     sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300) #Master function is a differential equation solver made for Numerical Methods.
     return sol_me
@@ -179,7 +179,7 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\23.09 22c.csv')
+    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
 
     # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')

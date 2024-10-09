@@ -6,54 +6,55 @@ from scipy.optimize import curve_fit
 # Load data for 27°C
 my_data = np.genfromtxt('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv', delimiter=';', dtype=None, names=True, encoding=None)
 
-# Extract temperature data
-def temp_extract(data):
-    t200_pv_rows = data[data['TagName'] == 'T200_PV']
-    valid_rows = [row for row in t200_pv_rows if row['vValue'] not in ['(null)', None]]
+
+def temp_extract(data, x="T200_PV", offset=0):
+    '''Function to extract data from csv files
+    data = data path for your csv file. Give as a string 
+    x = Name of the instrument that you want. Default set to T200_PV (CSTR internal temperature) 
+    offset = linear offset for values. Default set to zero 
+    returns elapsed time and values for your
+    '''
+    # Extract the flow data to determine the starting time
+    flow_rows = data[data['TagName'] == "P120_Flow"]
+    valid_flow_rows = [row for row in flow_rows if row['vValue'] not in ['(null)', None]]
     
-    # Convert date strings to datetime objects
-    date_times = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_rows]
-    vvalues = [float(row['vValue']) for row in valid_rows]
+    # Check if we have valid flow rows
+    if not valid_flow_rows:
+        raise ValueError("No valid flow rows found in the data.")
     
-    start_time = date_times[0]
+    flow_values = [float(row['vValue']) for row in valid_flow_rows]
+    flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
     
-    # Calculate elapsed time in minutes
-    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in date_times]
+
+    start_time = None
+    for i in range(1, len(flow_values)):
+        if flow_values[i-1] < 1 and flow_values[i] > 1:     # Loop that checks when the AAH pump is turned on and sets that as the start time
+            start_time = flow_dates[i]
+            break # Stop the loop once flow starts
+
+    # Handle the case where no start time is found
+    if start_time is None:
+        start_time = flow_dates[0]  # Use the first flow date if no flow condition is met
+
+    # Extract temperature data for the specified tag
+    temp_rows = data[data['TagName'] == x]  # Only choose the rows for that particular instrument 
+    valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]] # Remove null values
     
-    return elapsed_time, vvalues
+    temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows]
+    temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
 
-elapsed_time_27c, temp_27c = temp_extract(my_data)
+    # Calculate elapsed time in minutes from the start_time
+    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates]
 
-# Filter data for 4 < t < 32.5 minutes
-time_mask = (np.array(elapsed_time_27c) > 4) & (np.array(elapsed_time_27c) < 32.5)
-filtered_time = np.array(elapsed_time_27c)[time_mask]
-filtered_temp = np.array(temp_27c)[time_mask]
+    return elapsed_time, temp_values
 
-# Define the model function for temperature as a function of time
-def temperature_model(t, T0, Tf, k):
-    return Tf + (T0 - Tf) * np.exp(-k * t)
 
-# Initial guess for parameters [T0, Tf, k]
-initial_guess = [filtered_temp[0], 27 + 273.15, 0.01]
 
-# Fit the model to the filtered data
-popt, pcov = curve_fit(temperature_model, filtered_time, filtered_temp, p0=initial_guess)
+time_temp, temp = temp_extract(my_data)
+time_conductivity, conductivity = temp_extract(my_data, x="Q210_PV")
 
-# Extract fitted parameters
-T0_fit, Tf_fit, k_fit = popt
-print(f"Fitted T0: {T0_fit:.2f} K, Fitted Tf: {Tf_fit:.2f} K, Fitted k: {k_fit:.5f} min^-1")
 
-# Generate fitted data for plotting
-fitted_temps = temperature_model(np.array(filtered_time), *popt)
 
-# Compute dT/dt using numpy's gradient
-dT_dt = np.gradient(fitted_temps, filtered_time)
 
-# Plot dT/dt vs T(t)
-plt.figure(figsize=(10, 6))
-plt.plot(fitted_temps, dT_dt, marker='o', linestyle='-', color='blue')
-plt.xlabel('Temperature (K)')
-plt.ylabel('dT/dt (K/min)')
-plt.title('Rate of Change of Temperature vs Temperature at 27°C')
-plt.grid()
+plt.plot(time_temp, conductivity)
 plt.show()
