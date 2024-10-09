@@ -1,3 +1,3 @@
 import numpy as np
 
-print(np.mod(8,4))
+print(np.mod(0,4))

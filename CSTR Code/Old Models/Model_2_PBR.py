@@ -169,10 +169,15 @@ def der_func(t,C, parameters,n):
     
     return dcdt
 
-sol_me = model_2_pbr(20,100,20,V=137,tspan =[0,3600],n=100)
+sol_me = model_2_pbr(20,100,20,V=137,tspan =[0,3600],n=2)
 
-plt.plot(sol_me[0],sol_me[1])
+
+plt.plot(sol_me[0], sol_me[1][:,-1])  # 4*7-1 refers to temperature of the 7th reactor
+plt.title("Temperature Profile in the Last Reactor")
+plt.xlabel("Time (s)")
+plt.ylabel("Temperature (K)")
 plt.show()
+
 
 # elapsed_time = np.zeros(n)
 # dc_1 = np.zeros(n)

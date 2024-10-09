@@ -4,7 +4,7 @@ from datetime import datetime
 from scipy.optimize import curve_fit
 
 # Load data for 27°C
-my_data = np.genfromtxt('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv', delimiter=';', dtype=None, names=True, encoding=None)
+my_data = np.genfromtxt('Data\CSTR\\25.09 37c.csv', delimiter=';', dtype=None, names=True, encoding=None)
 
 
 def temp_extract(data, x="T200_PV", offset=0):

@@ -86,10 +86,10 @@ print(f"Fitted parameters: a = {a}, b = {b}")
 # Prepare fitted line data for plotting
 x_fit = np.linspace(np.min(x_plot[8:-35]), np.max(x_plot[8:-35]), 100)
 y_fit = linear_fit(x_fit, a, b)
+print(conductivity_max)
 
-
-print(f"Ea={a*1e-1*-8.3145}")
-print(f"k={np.exp(b*1e-1)}")
+print(f"Ea={a*-8.3145}")
+print(f"k={np.exp(b)}")
 
 ##Plotting
 plt.plot(x_plot[8:-35], np.log(k[8:-35]), 'bo', label='Data')
