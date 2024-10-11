@@ -1,48 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
+import scipy.integrate
 # Assume reaction is 1st order wrt both components
 # Assume isothermal (no exotherm)
 # Assume constant density
 
-def master_function(fun,tspan, y0, method='rk4', number_of_points=100):
-    '''General function to solve system of differential equations. Does not work on single differential equations. \n
-    fun = function 
-    y0 = vector of initial conditions
-    optional:\n
-    method = You can select the method with which your system of differential equations will be evaluated. Default set to second order Runge-Kutta. \n
-    Supported methods : midpoint method ('midpoint'), euler method ('euler'), Classical second order Runge-Kutta ('rk2'), classical fourth order Runge-Kutta ('rk4').
-    number_of_points = how many steps. Default set to 100. Increasing this reduces error but increases computation time. '''
-    dt = (tspan[1] - tspan[0])/number_of_points
-    t = np.linspace(tspan[0], tspan[1], number_of_points+1)
-    y = np.zeros((number_of_points+1, len(y0))) # len(y0) because you would need an initial condition for each derivative.
-    for i in range(len(y0)): #initial conditions as a loop to ensure universability.
-        y[0,i] = y0[i]
-    if method == 'midpoint':
-        for i in range(number_of_points):
-            k1 = fun(t[i], y[i,:])
-            k2 = fun(t[i] + dt*0.5, y[i,:] + 0.5*dt*k1)
-            y[i+1,:] = y[i,:] + dt * k2
-    elif method == 'euler':
-        for i in range(number_of_points):
-            y[i+1,:] = y[i,:] + dt * fun(t[i], y[i,:])
-    elif method == 'rk2':
-        for i in range(number_of_points):
-            k1 = fun(t[i], y[i,:])
-            k2 = fun(t[i] + dt, y[i] + dt*k1)
-            y[i+1,:] = y[i] + dt*0.5*(k1+k2)
-    elif method == 'rk4':
-        for i in range(number_of_points):
-            k1 = fun(t[i], y[i,:])
-            k2 = fun(t[i] + dt*0.5, y[i,:] + 0.5*dt*k1)
-            k3 = fun(t[i] + dt*0.5, y[i,:] + 0.5*dt*k2)
-            k4 = fun(t[i] +dt, y[i,:] + dt*k3)
-            y[i+1,:] = y[i] + dt*((1/6)*k1 + (1/3)*(k2+k3) + (1/6)*k4)
-    else:
-        return 'Unknown method specified. Check documentation for supported methods' # In case an unknown method is specified
-    return t, y
-
-def CSTR_model(T,fv1,fv2, V=123, tspan = [0,3600], n=6):
+def PBR_model(T,fv1,fv2, V=123, tspan = [0,3600], n=6):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -80,10 +44,10 @@ def CSTR_model(T,fv1,fv2, V=123, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 9.092246269480829e+16,          # Reaction rate constant (ml/mol/s)
+        "k0": np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 104982.28755856157,             # Activation energy (J/mol)
+        "Ea": 45622.34,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
@@ -102,7 +66,7 @@ def CSTR_model(T,fv1,fv2, V=123, tspan = [0,3600], n=6):
         elif np.mod(i,4)==3:
             xini[i] = xini_temp[3]
 
-    sol_me = master_function(lambda t, C: der_func(t, C, params, n), tspan, xini, method='rk4', number_of_points=300) #Master function is a differential equation solver made for Numerical Methods.
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params, n)) 
     return sol_me
 
 def der_func(t,C, parameters, n=6):
@@ -201,16 +165,20 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
-    sol_me = CSTR_model(20,100,20,V=137,tspan =[0,3600],n=9)
+    data_22c = data_extract('Data\PFR\\25.09.30C.csv')
 
+    sol_me = PBR_model(data_22c[2], data_22c[4], data_22c[3], V=131, tspan=[0, 3600], n=6)
     # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
     # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me[0]/60, sol_me[1][:, 9*4-1]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
-    plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
+    for i in range(6):  # Looping over each reactor stage
+        plt.plot(sol_me.t / 60, sol_me.y[3 + 4 * i, :] - 273.15, label=f"Stage {i+1} Model Prediction")
+
+    # Plotting experimental data
+    plt.plot(data_22c[0], data_22c[1], label="Experimental Data", linestyle='--', color='black')
+    
+    plt.xlabel("Time (minutes)")
+    plt.xlim(0, np.max(data_22c[0]))
+    plt.ylabel("Temperature (°C)")
     plt.legend()
-    plt.title('Temperature')
+    plt.title("Temperature vs Time")
     plt.show()
