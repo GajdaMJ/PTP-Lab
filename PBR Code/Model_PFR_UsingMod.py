@@ -44,7 +44,7 @@ def PBR_model(T,fv1,fv2, V=123, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 6e6,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
         "Ea": 45622.34,             # Activation energy (J/mol)
@@ -192,7 +192,7 @@ def data_extract(data, x, offset=0):
 if __name__ == '__main__':
     my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
-    # extracting all temp data
+    # Extracting all temperature data
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
     results = {}
 
@@ -200,41 +200,42 @@ if __name__ == '__main__':
         elap_time, temp_c, offset_time = data_extract(my_data, t_value)
         results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
 
-    #Get AAH Flowrate
+    # Get AAH Flowrate and Water Flowrate
     elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
-
-    #Get Water Flowrate
     elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
 
+    # Find initial temperature and flowrates
     initial_temperature = np.min(temp_c)
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
 
-    sol_me = CSTR_model(20,100,20,V=137,tspan =[0,3600],n=9)
+    # Run PBR model simulation
+    sol_me = PBR_model(20, 100, 20, V=137, tspan=[0, 3600], n=9)
 
+    # Create subplots for each reactor stage
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
-    for i in range(0,8):
-        ax[i].plot(results[t_values[-(i+1)]]['elapsed_time'], np.array(results[t_values[-(i+1)]]['temperature']) - results[t_values[-(i+1)]]['temperature'][0],color='#ff7f0e',label= 'real')
-        ax[i].plot(sol_me[0]/60, sol_me[1][:,9], color='#1f77b4',label = 'model')
 
-        ax[i].set_title(f'reactor {i + 1} Data')
+    for i in range(0, 8):
+        # Extract experimental temperature data
+        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
+        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
+
+        # Plot real temperature data
+        ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
+
+        # Plot model temperature data for the corresponding stage
+        ax[i].plot(sol_me.t / 60, sol_me.y[3 + i*4, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+
+        # Set plot title, labels, and grid
+        ax[i].set_title(f'Reactor {i + 1} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
         ax[i].set_ylabel('Temperature (°C)')
-        ax[i].set_xlim(0,15)
+        ax[i].set_xlim(0, 15)
         ax[i].grid(True)
-        ax[i].set_xlim(0,15)
         ax[i].legend()
-    fig.suptitle('T200_PV Temperature Data over Time', fontsize=16) # Adjust layout to prevent label overlap and set a global title
-    plt.tight_layout(rect=[0, 0, 1, 0.95])  # fixes overlap
+
+    # Set global title and adjust layout
+    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-    # # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-    # # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    # plt.plot(sol_me[0]/60, sol_me[1][:, 9*4-1]-273.15, label='think')
-    # plt.plot(my_data[0], my_data[1], label='real')
-    # plt.xlabel('Time (minutes)')
-    # plt.xlim(0, np.max(my_data[1]))
-    # plt.ylabel('Temperature')
-    # plt.legend()
-    # plt.title('Temperature')
-    # plt.show()
