@@ -180,37 +180,98 @@ def temp_extract(data, x="T200_PV", offset=0):
 
     return elapsed_time, temp_values
 
-def data_extract(data_path):
-    '''Extracts the initial conditions for a the reaction \n
-    Data_Path = relative path to the csv document'''
-    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
+# def data_extract(data_path):
+#     '''Extracts the initial conditions for a the reaction \n
+#     Data_Path = relative path to the csv document'''
+#     data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
 
-    #Get temperature
-    elapsed_time, temp = temp_extract(data_numpy) 
+#     #Get temperature
+#     elapsed_time, temp = temp_extract(data_numpy) 
 
-    #Get AAH Flowrate
-    elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
+#     #Get AAH Flowrate
+#     elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
 
-    #Get Water Flowrate
-    elapsed_time_water, water_flowrate_vector = temp_extract(data_numpy, x='P100_Flow')
+#     #Get Water Flowrate
+#     elapsed_time_water, water_flowrate_vector = temp_extract(data_numpy, x='P100_Flow')
 
-    initial_temperature = np.min(temp) # Minimum temp = ini temp
-    aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
-    water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
-    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
+#     initial_temperature = np.min(temp) # Minimum temp = ini temp
+#     aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
+#     water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
+#     return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
+
+
+def data_extract(data, x, offset=0):
+    # Extract the flow data to determine the starting time
+    flow_rows = data[data['TagName'] == "P120_Flow"]
+    valid_flow_rows = [row for row in flow_rows if row['vValue'] not in ['(null)', None]]
+    flow_values = [float(row['vValue']) for row in valid_flow_rows]
+    flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
+
+    start_time = None
+    for i in range(1, len(flow_values)):
+        if flow_values[i-1] < 1 and flow_values[i] > 1:
+            start_time = flow_dates[i]
+            break
+    
+    # Extract temperature data starting from the transition point
+    temp_rows = data[data['TagName'] == x]
+    valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]]
+    
+    temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows]
+    temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
+
+    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates] # Calculate elapsed time in minutes from the start_time
+
+    return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
+    my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+
+    # extracting all temp data
+    t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
+    results = {}
+
+    for t_value in t_values:
+        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
+        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
+
+    #Get AAH Flowrate
+    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
+
+    #Get Water Flowrate
+    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
+
+    initial_temperature = np.min(temp_c)
+    aah_flowrate_c = np.median(aah_flowrate_c_vector)
+    water_flowrate_c = np.median(water_flowrate_c_vector)
+
     sol_me = CSTR_model(20,100,20,V=137,tspan =[0,3600],n=9)
 
-    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me[0]/60, sol_me[1][:, 9*4-1]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
-    plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
-    plt.legend()
-    plt.title('Temperature')
+    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
+    ax = ax.flatten()
+    for i in range(0,8):
+        ax[i].plot(results[t_values[-(i+1)]]['elapsed_time'], np.array(results[t_values[-(i+1)]]['temperature']) - results[t_values[-(i+1)]]['temperature'][0],color='#ff7f0e',label= 'real')
+        ax[i].plot(sol_me[0]/60, sol_me[1][:,9], color='#1f77b4',label = 'model')
+
+        ax[i].set_title(f'reactor {i + 1} Data')
+        ax[i].set_xlabel('Elapsed Time (min)')
+        ax[i].set_ylabel('Temperature (°C)')
+        ax[i].set_xlim(0,15)
+        ax[i].grid(True)
+        ax[i].set_xlim(0,15)
+        ax[i].legend()
+    fig.suptitle('T200_PV Temperature Data over Time', fontsize=16) # Adjust layout to prevent label overlap and set a global title
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # fixes overlap
     plt.show()
+
+    # # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
+    # # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
+    # plt.plot(sol_me[0]/60, sol_me[1][:, 9*4-1]-273.15, label='think')
+    # plt.plot(my_data[0], my_data[1], label='real')
+    # plt.xlabel('Time (minutes)')
+    # plt.xlim(0, np.max(my_data[1]))
+    # plt.ylabel('Temperature')
+    # plt.legend()
+    # plt.title('Temperature')
+    # plt.show()
