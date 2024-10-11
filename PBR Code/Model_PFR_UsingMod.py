@@ -58,7 +58,7 @@ def CSTR_model(T,fv1,fv2, V=123, tspan = [0,3600], n=6):
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
     fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
-
+    #dont use ml/s use l/s
     #Chemical constants
 
     #Water
@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
     # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
+    plt.plot(sol_me[0]/60, sol_me[1][:, 9*4-1]-273.15, label='think')
     plt.plot(data_22c[0], data_22c[1], label='real')
     plt.xlabel('Time (minutes)')
     plt.xlim(0, np.max(data_22c[1]))
