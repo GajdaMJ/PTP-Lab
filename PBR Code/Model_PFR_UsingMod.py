@@ -144,25 +144,6 @@ def temp_extract(data, x="T200_PV", offset=0):
 
     return elapsed_time, temp_values
 
-# def data_extract(data_path):
-#     '''Extracts the initial conditions for a the reaction \n
-#     Data_Path = relative path to the csv document'''
-#     data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
-
-#     #Get temperature
-#     elapsed_time, temp = temp_extract(data_numpy) 
-
-#     #Get AAH Flowrate
-#     elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
-
-#     #Get Water Flowrate
-#     elapsed_time_water, water_flowrate_vector = temp_extract(data_numpy, x='P100_Flow')
-
-#     initial_temperature = np.min(temp) # Minimum temp = ini temp
-#     aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
-#     water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
-#     return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
-
 
 def data_extract(data, x, offset=0):
     # Extract the flow data to determine the starting time

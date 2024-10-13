@@ -6,8 +6,7 @@ import scipy.integrate
 # Assume isothermal (no exotherm)
 # Assume constant density
 
-
-def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
+def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600]):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -42,7 +41,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     params = { # Stores the relevant thermodynamic constants as a dictionary 
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
-        "Inlet temperature": T+273.15, # Temp but now in kelvin
+        "Inlet temperature": T1+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
         "k0": 7e6,          # Reaction rate constant (ml/mol/s)
@@ -55,9 +54,17 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "cp": 4.186             # Heat capacity (J/g/K)
     }
     # print(params['C_in_AAH']*params['C_in_water'])
-    xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
-    return sol_me
+    xini = [cw_pure,0,0,T1+273.15] # Initial Conditions 
+    sol_1 =  scipy.integrate.solve_ivp(der_func, [0,1800], xini, args=(params,)) 
+    
+    params["Inlet temperature"] = T2+273.15
+    xini = [sol_1.y[0,-1], sol_1.y[1,-1], sol_1.y[2,-1], sol_1.y[3,-1]]    
+    sol_2 = scipy.integrate.solve_ivp(der_func, [1800,3600], xini, args=(params,))
+
+    combined_time = np.concatenate((sol_1.t, sol_2.t))  # Combine time points
+    combined_y = np.concatenate((sol_1.y, sol_2.y), axis=1)  # Combine solution arrays along axis 1 (columns)
+
+    return combined_time, combined_y
 
 def der_func(t,C, parameters):
     '''This function contains the differential equations to solve the reaction A+B->2C in an adiabatic 
@@ -144,15 +151,14 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
-    sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
+    # data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
 
-    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
+    sol_time, sol_y = CSTR_model(27.299999237060547,30,  185.82696533203125, 14.89059066772461, V=567)
+
+    plt.plot(sol_time/60, sol_y[3, :]-273.15, label='think')
+    # plt.plot(data_22c[0], data_22c[1], label='real')
     plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
+    #plt.xlim(0, np.max(data_22c[1]))
     plt.ylabel('Temperature')
     plt.legend()
     plt.title('Temperature')
