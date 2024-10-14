@@ -52,10 +52,10 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 7e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45622.34,             # Activation energy (J/mol)
+        "Ea": 45187.2,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
@@ -194,7 +194,34 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
 
+def least_squares_error(sol_me, results, t_values, n_tanks, initial_temperature):
+    '''Calculates the least squares error between model predictions and real temperature data'''
+
+    total_error = 0
+
+    for i in range(0, 8):
+        # Extract experimental temperature data
+        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
+        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
+        tank = math.ceil((i * n_tanks) / 8)
+
+        # Interpolate model prediction to align with experimental time points
+        model_temperature = np.interp(elapsed_time, sol_me.t / 60, sol_me.y[3 + tank*5, :] - 273.15)
+
+        # Calculate the residuals (difference between model and real data)
+        residuals = temp_data - model_temperature - initial_temperature
+        
+        # Sum of squared residuals
+        squared_error = np.sum(residuals**2)
+        total_error += squared_error
+
+    return total_error
+
+# Now we add least squares comparison to your main code
 if __name__ == '__main__':
     my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
@@ -215,39 +242,25 @@ if __name__ == '__main__':
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks=16
+    n_tanks_range = range(8, 20)  # Range of number of tanks to test
+    error_list = []  # List to store (n_tanks, error) tuples
 
-    # Run PBR model simulation
-    sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+    for i in n_tanks_range:
+        # Run PBR model simulation
+        sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=i)
 
-    # Create subplots for each reactor stage
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
-    ax = ax.flatten()
+        # Calculate least squares error
+        error = least_squares_error(sol_me, results, t_values, i, initial_temperature)
 
-    retention_time = 2 + 2/60 #minutes
+        # Store the number of tanks and corresponding error in the list
+        error_list.append((i, error))
+        print(f'Total least squares error: {error:.4f} for {i} tanks')
+
+    # Find the configuration with the minimum error
+    best_n_tanks, min_error = min(error_list, key=lambda x: x[1])
+
+    # Print the best result
+    print(f'\nThe optimal number of tanks is {best_n_tanks} with the lowest least squares error of {min_error:.4f}.')
 
 
-    for i in range(0, 8):
-        # Extract experimental temperature data
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-        tank = math.ceil((i*n_tanks)/(8))
-
-        # Plot real temperature data
-        ax[i].plot(elapsed_time, temp_data, color='#ff7f0e', label='Real Data')
-
-        # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60 , sol_me.y[3 + tank*5, :] - 273.15+10, color='#1f77b4', label='Model Prediction')
-
-        # Set plot title, labels, and grid
-        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
-        ax[i].set_xlabel('Elapsed Time (min)')
-        ax[i].set_ylabel('Temperature (°C)')
-        ax[i].set_xlim(0, 15)
-        ax[i].grid(True)
-        ax[i].legend()
-
-    # Set global title and adjust layout
-    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.show()
+    

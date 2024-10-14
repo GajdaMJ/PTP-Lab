@@ -52,10 +52,10 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 7e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45622.34,             # Activation energy (J/mol)
+        "Ea": 45187.2,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
@@ -218,7 +218,7 @@ if __name__ == '__main__':
     n_tanks=16
 
     # Run PBR model simulation
-    sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
     # Create subplots for each reactor stage
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
@@ -234,15 +234,15 @@ if __name__ == '__main__':
         tank = math.ceil((i*n_tanks)/(8))
 
         # Plot real temperature data
-        ax[i].plot(elapsed_time, temp_data, color='#ff7f0e', label='Real Data')
+        ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60 , sol_me.y[3 + tank*5, :] - 273.15+10, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_me.t / 60 , sol_me.y[3 + tank*5, :] - 273.15 - initial_temperature, color='#1f77b4', label='Model Prediction')
 
         # Set plot title, labels, and grid
         ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
-        ax[i].set_ylabel('Temperature (°C)')
+        ax[i].set_ylabel('Change in Temperature (°C)')
         ax[i].set_xlim(0, 15)
         ax[i].grid(True)
         ax[i].legend()
