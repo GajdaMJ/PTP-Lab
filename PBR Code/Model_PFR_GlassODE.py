@@ -52,7 +52,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 1.8e6,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 1e6,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
         "Ea": 45622.34,             # Activation energy (J/mol)
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks=14  
+    n_tanks=14
 
     # Run PBR model simulation
     sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
@@ -237,7 +237,7 @@ if __name__ == '__main__':
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60  + tank * retention_time / n_tanks, sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_me.t / 60 , sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
                                     #adding this retention time might not be even needed as now there is a delay by default, so addining this retention time delay just ends up doubling it
                                     #run the code without it to see what I mean
 
