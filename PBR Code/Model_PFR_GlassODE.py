@@ -236,7 +236,8 @@ if __name__ == '__main__':
 
         # Plot model temperature data for the corresponding stage
         ax[i].plot(sol_me.t / 60  + tank * retention_time / n_tanks, sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
-
+                                    #adding this retention time might not be even needed as now there is a delay by default, so addining this retention time delay just ends up doubling it
+                                    #run the code without it to see what I mean
 
         # Set plot title, labels, and grid
         ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank} Data')
