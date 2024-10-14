@@ -6,7 +6,7 @@ import scipy.integrate
 # Assume isothermal (no exotherm)
 # Assume constant density
 
-def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600]):
+def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -55,11 +55,12 @@ def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600]):
     }
     # print(params['C_in_AAH']*params['C_in_water'])
     xini = [cw_pure,0,0,T1+273.15] # Initial Conditions 
-    sol_1 =  scipy.integrate.solve_ivp(der_func, [0,1800], xini, args=(params,)) 
+    sol_1 =  scipy.integrate.solve_ivp(der_func, [tspan[0], t_change], xini, args=(params,)) 
     
-    params["Inlet temperature"] = T2+273.15
-    xini = [sol_1.y[0,-1], sol_1.y[1,-1], sol_1.y[2,-1], sol_1.y[3,-1]]    
-    sol_2 = scipy.integrate.solve_ivp(der_func, [1800,3600], xini, args=(params,))
+    #Change over
+    params["Inlet temperature"] = T2+273.15 #Change temp
+    xini = [sol_1.y[0,-1], sol_1.y[1,-1], sol_1.y[2,-1], sol_1.y[3,-1]]   #Take last row as initial conditions for next solution iteration 
+    sol_2 = scipy.integrate.solve_ivp(der_func, [t_change,tspan[1]], xini, args=(params,))
 
     combined_time = np.concatenate((sol_1.t, sol_2.t))  # Combine time points
     combined_y = np.concatenate((sol_1.y, sol_2.y), axis=1)  # Combine solution arrays along axis 1 (columns)

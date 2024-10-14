@@ -6,7 +6,7 @@ import scipy.integrate
 # Assume isothermal (no exotherm)
 # Assume constant density
 
-def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
+def PBR_model(T,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change=1800, n=6):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -21,7 +21,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
 
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
-    fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
+    fv_a_dm3_s = fv2_1  / 60  # Anhydride flow rate in ml/s
     #dont use ml/s use l/s
     #Chemical constants
 
@@ -80,8 +80,23 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         elif np.mod(i, 5)==4:
             xini[i] = xini_temp[4]
 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params, n)) 
-    return sol_me
+    sol_1 = scipy.integrate.solve_ivp(der_func, [tspan[0],t_change], xini, args=(params, n)) 
+
+    #Modify the parameters to account for the step change
+    fv_a_dm3_s = fv2_2  / 60  # Anhydride flow rate in ml/s
+    flow_array = [fv_w_dm3_s, fv_a_dm3_s]
+    params['C_in_water']= (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
+    params['C_in_AAH'] =(flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
+    params['flow'] = flow_array
+
+    xini_2 = sol_1.y[:, -1]
+
+    sol_2 = scipy.integrate.solve_ivp(der_func, [t_change,tspan[1]], xini_2, args=(params, n))
+
+    combined_time = np.concatenate((sol_1.t, sol_2.t))  # Combine time points
+    combined_y = np.concatenate((sol_1.y, sol_2.y), axis=1)  # Combine solution arrays along axis 1 (columns)
+
+    return combined_time, combined_y
 
 def der_func(t,C, parameters, n=6):
     '''This function contains the differential equations to solve the reaction A+B->2C in an adiabatic 
@@ -217,7 +232,7 @@ if __name__ == '__main__':
     n_tanks=14
 
     # Run PBR model simulation
-    sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+    sol_time, sol_y = PBR_model(20, water_flowrate_c, aah_flowrate_c, aah_flowrate_c+30, V=131, tspan=[0, 3600], t_change=1800, n=n_tanks)
 
     # Create subplots for each reactor stage
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
@@ -234,13 +249,13 @@ if __name__ == '__main__':
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60  + i * retention_time / n_tanks, sol_me.y[3 + i*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_time / 60  + i * retention_time / n_tanks, sol_y[3 + i*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
 
         # Set plot title, labels, and grid
         ax[i].set_title(f'Reactor {i + 1} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
         ax[i].set_ylabel('Temperature (°C)')
-        ax[i].set_xlim(0, 15)
+        ax[i].set_xlim(0, 60)
         ax[i].grid(True)
         ax[i].legend()
 
