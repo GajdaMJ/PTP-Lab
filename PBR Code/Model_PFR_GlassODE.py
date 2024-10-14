@@ -214,7 +214,7 @@ if __name__ == '__main__':
     initial_temperature = np.min(temp_c)
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
-    n_tanks=14
+    n_tanks=14  
     # Run PBR model simulation
     sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
@@ -235,7 +235,8 @@ if __name__ == '__main__':
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60  + i * retention_time / n_tanks, sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_me.t / 60  + tank * retention_time / n_tanks, sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+
 
         # Set plot title, labels, and grid
         ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank} Data')
