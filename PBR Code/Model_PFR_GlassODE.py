@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import scipy.integrate
+import math
 # Assume reaction is 1st order wrt both components
 # Assume isothermal (no exotherm)
 # Assume constant density
@@ -214,7 +215,7 @@ if __name__ == '__main__':
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks=14
+    n_tanks=14  
 
     # Run PBR model simulation
     sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
@@ -225,19 +226,23 @@ if __name__ == '__main__':
 
     retention_time = 2 + 2/60 #minutes
 
+
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
         elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
+        tank = math.ceil((i*n_tanks)/(8))
 
         # Plot real temperature data
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60  + i * retention_time / n_tanks, sol_me.y[3 + i*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_me.t / 60  + tank * retention_time / n_tanks, sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+                                    #adding this retention time might not be even needed as now there is a delay by default, so addining this retention time delay just ends up doubling it
+                                    #run the code without it to see what I mean
 
         # Set plot title, labels, and grid
-        ax[i].set_title(f'Reactor {i + 1} Data')
+        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
         ax[i].set_ylabel('Temperature (°C)')
         ax[i].set_xlim(0, 15)
