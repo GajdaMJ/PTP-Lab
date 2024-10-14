@@ -237,12 +237,10 @@ if __name__ == '__main__':
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60  + tank * retention_time / n_tanks, sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
-                                    #adding this retention time might not be even needed as now there is a delay by default, so addining this retention time delay just ends up doubling it
-                                    #run the code without it to see what I mean
+        ax[i].plot(sol_me.t / 60 , sol_me.y[3 + tank*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
 
         # Set plot title, labels, and grid
-        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank} Data')
+        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
         ax[i].set_ylabel('Temperature (°C)')
         ax[i].set_xlim(0, 15)
