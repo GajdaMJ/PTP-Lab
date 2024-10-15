@@ -198,7 +198,7 @@ if __name__ == '__main__':
     data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C']
     results = {}
 
-    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
+    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T400_PV']
 
     # Load and extract temperature data from CSV files
     for file in data_files:
@@ -224,33 +224,31 @@ if __name__ == '__main__':
         
     # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
-        real_temps = []  # To store the real temperatures
-        model_temps = []  # To store the model temperatures
+        waterbath_temps = []  # To store the real temperatures
+        temp_probe_temps = []  # To store the model temperatures
         
         for file in data_files:
             temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
 
             # Extract the initial temperature (first value) from the real data
             initial_real_temp = temp_data[0]
-            real_temps.append(initial_real_temp)  # Store the real temperatures
+            temp_probe_temps.append(initial_real_temp)  # Store the real temperatures
             
             tank = math.ceil((i * n_tanks) / (8))
 
             # Get the initial model temperature from the simulation (at t=0)
-            sol_me = PBR_model(initial_real_temp, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
-            initial_model_temp = sol_me.y[3 + tank * 5, 0] - 273.15  # Convert from K to °C
-            model_temps.append(initial_model_temp)  # Store the model temperatures
+            waterbath_temps = np.array(results[file][t_values[8]]['temperature'])
 
         # Now plot the collected data for each probe
         ax[i].plot(
-            real_temps,  # x: list of initial actual temperatures
-            model_temps,  # y: list of initial model temperatures
+            waterbath_temps,  # x: list of initial actual temperatures
+            temp_probe_temps,  # y: list of initial model temperatures
             '-o', label=f'Probe {i + 1}', color='red'  # Line with points
         )
         
-        # Fit a line to the data (real_temps vs model_temps)
-        if len(real_temps) > 1:  # Ensure we have enough points to fit a line
-            m, b = np.polyfit(real_temps, model_temps, 1)  # Linear fit (y = mx + b)
+        # Fit a line to the data (waterbath_temps vs temp_probe_temps)
+        if len(waterbath_temps) > 1:  # Ensure we have enough points to fit a line
+            m, b = np.polyfit(waterbath_temps, temp_probe_temps, 1)  # Linear fit (y = mx + b)
             
             # Print the equation of the line
             print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
