@@ -291,22 +291,22 @@ if __name__ == '__main__':
             ax[i].plot(
                 waterbath_range,  # x values
                 m * waterbath_range + b,  # y = mx + b
-                '-', label=f'Best Fit Line (Probe {i + 1})', color='blue'  # Line without points
+                '-', label='Best Fit Line', color='blue'  # Line without points
             )
             
             # Print the equation of the line
             print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
 
-        ax[i].set_title(f'Probe {i + 1}')
+        ax[i].set_title(f'Temperature Probe {i + 1}')
         ax[i].set_xlabel('Water Bath Temp (°C)')
         ax[i].set_ylabel('Probe Temp (°C)')
-        ax[i].set_xlim(20, 45)  # Adjust based on expected temperature range
-        ax[i].set_ylim(20, 45)  # Adjust based on expected temperature range
+        ax[i].set_xlim(20, 45) 
+        ax[i].set_ylim(20, 45)  
         ax[i].minorticks_on()
         ax[i].grid(which='major', linewidth=2)
         ax[i].grid(which='minor', linewidth=0.5)
         ax[i].legend()
 
-    fig.suptitle('Initial Temperature: Water Bath vs Probe', fontsize=16)
+    fig.suptitle('Initial Temperature: Water Bath vs Temperature Probes', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
