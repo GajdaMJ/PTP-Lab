@@ -89,7 +89,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
 
 
-    sol_tank1 = master_function(lambda t, C: der_func_first_reactor(t, C, params), tspan, xini, method='rk4', number_of_points=300)
+    sol_tank1 = master_function(lambda t, C: der_func_first_reactor(t, C, params), tspan, xini, method='rk4', number_of_points=100)
 
     # Initialize list of solutions for tanks 2 to 7
     sol_tanks = [sol_tank1]
@@ -170,7 +170,7 @@ def temp_extract(data, x, offset=0):
     # Find the first point where flow transitions from < 1 to > 1
     start_time = None
     for i in range(1, len(flow_values)):
-        if flow_values[i-1] < 1 and flow_values[i] > 1:
+        if flow_values[i-1] != flow_values[i]:
             start_time = flow_dates[i]
             break
 
@@ -193,10 +193,7 @@ def temp_extract(data, x, offset=0):
 my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
 #Get temperature
-elapsed_time_c_208, temp_c = temp_extract(my_data,'T208_PV')
-elapsed_time_c_20, temp_c = temp_extract(my_data,)
-
-
+elapsed_time, temp_c = temp_extract(my_data,'T201_PV')
 
 #Get AAH Flowrate
 elapsed_time_c_aah, aah_flowrate_c_vector = temp_extract(my_data, x="P120_Flow")
