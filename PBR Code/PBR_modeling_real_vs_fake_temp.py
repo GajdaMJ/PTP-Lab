@@ -194,64 +194,66 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
-
 if __name__ == '__main__':
-    data = ['18.09.25.C_again','18.09.40C_again', '25.09.30C']
-    my_data = np.zeros(len(data))
-    
-    for file in data:
-        my_data[file] = np.genfromtxt(f'Data/PFR/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
-
-    # Extracting all temperature data
-    t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
+    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C']
     results = {}
 
-    for t_value in t_values:
-        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
-        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
+    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
 
-    # Get AAH Flowrate and Water Flowrate
-    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
-    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
+    # Load and extract temperature data from CSV files
+    for file in data_files:
+        my_data = np.genfromtxt(f'Data/PFR/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
-    # Find initial temperature and flowrates
-    initial_temperature = np.min(temp_c)
-    aah_flowrate_c = np.median(aah_flowrate_c_vector)
-    water_flowrate_c = np.median(water_flowrate_c_vector)
-    
-    n_tanks=16
+        # Extract temperature data for each sensor
+        file_results = {}
+        for t_value in t_values:
+            elap_time, temp_c, _ = data_extract(my_data, t_value)  # Ignore offset_time
+            file_results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
+        
+        results[file] = file_results
 
-    # Run PBR model simulation
-    sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+    # Simulate the model with PBR
+    n_tanks = 16
+    water_flowrate_c = 100  # Example value
+    aah_flowrate_c = 50  # Example value
+    # sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
-    # Create subplots for each reactor stage
+    # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
+    
 
-    retention_time = 2 + 2/60 #minutes
-
+    # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
-        # Extract experimental temperature data
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-        tank = math.ceil((i*n_tanks)/(8))
+        for file in data_files:
+            temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
 
+            # Extract the initial temperature (first value) from the real data
+            initial_real_temp = temp_data[0]
+            
+            tank = math.ceil((i * n_tanks) / (8))
 
-        # # Plotting the initial temperature of the model vs the initial real temperature
-        ax[i].scatter(temp_data[0] , sol_me.y[3 + tank*5, 0] - 273.15+10, color='red')
-        ax[i].scatter(temp_data[0], sol_me.y[3.+tank*5,0] - 273.15+10, color = 'blue')
+            # Get the initial model temperature from the simulation (at t=0)
+            sol_me = PBR_model(initial_real_temp,water_flowrate_c,aah_flowrate_c,V=131,tspan=[0,3600],n=n_tanks)
+            initial_model_temp = sol_me.y[3 + tank * 5, 0] - 273.15  # Convert from K to °C
 
-        # Set plot title, labels, and grid
-        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
-        ax[i].set_xlabel('Predicted Temperature in (°C)')
-        ax[i].set_ylabel('Real Temperature (°C)')
-        ax[i].set_xlim(18, 38)
-        ax[i].grid(True)
-        # ax[i].legend()
+            # Plot the comparison
+            ax[i].plot(
+                initial_real_temp,  # x: initial actual temperature
+                initial_model_temp,  # y: initial model temperature
+                '-o',label=f'{file}', color='red'
+            )
+        
+        ax[i].set_title(f'Probe {i + 1}')
+        ax[i].set_xlabel('Initial Real Temp (°C)')
+        ax[i].set_ylabel('Initial Model Temp (°C)')
+        ax[i].set_xlim(15, 50)  # Adjust based on expected temperature range
+        ax[i].set_ylim(15, 50)  # Adjust based on expected temperature range
+        ax[i].minorticks_on()
+        ax[i].grid(which = 'major', linewidth = 2)
+        ax[i].grid(which = 'minor', linewidth = 0.5)
+        ax[i].legend()
 
-    # Set global title and adjust layout
-    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16)
+    fig.suptitle('Initial Temperature: Real vs Model', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
-
