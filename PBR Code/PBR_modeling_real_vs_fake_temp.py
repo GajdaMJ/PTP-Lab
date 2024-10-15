@@ -248,7 +248,9 @@ if __name__ == '__main__':
         ax[i].set_ylabel('Initial Model Temp (°C)')
         ax[i].set_xlim(15, 50)  # Adjust based on expected temperature range
         ax[i].set_ylim(15, 50)  # Adjust based on expected temperature range
-        ax[i].grid(True)
+        ax[i].minorticks_on()
+        ax[i].grid(which = 'major', linewidth = 2)
+        ax[i].grid(which = 'minor', linewidth = 0.5)
         ax[i].legend()
 
     fig.suptitle('Initial Temperature: Real vs Model', fontsize=16)
