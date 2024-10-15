@@ -230,8 +230,10 @@ if __name__ == '__main__':
             ax[i].plot(elapsed_time, temp_data, label=f'{file} Real Temp')
         
         tank = math.ceil((i * n_tanks) / (8))
-        ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, label="Model Temp", color='red')
-
+        
+        for k in range(len(data_files)):
+        #plotting actual temperature vs model temperature
+            ax[i].scatter(temp_data[0],sol_me.y[3+tank*5,0]- 273.15+10, label= f'At initial temperature {data_files[k]}', color = 'red')
         ax[i].set_title(f'Temperature Probe {i + 1}')
         ax[i].set_xlim(0, 60)
         ax[i].set_ylim(20, 40)
