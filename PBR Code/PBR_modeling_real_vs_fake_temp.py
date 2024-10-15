@@ -226,7 +226,6 @@ if __name__ == '__main__':
 
     retention_time = 2 + 2/60 #minutes
 
-    #chang
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
