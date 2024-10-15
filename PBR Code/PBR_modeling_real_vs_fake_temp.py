@@ -216,7 +216,7 @@ if __name__ == '__main__':
     n_tanks = 16
     water_flowrate_c = 100  # Example value
     aah_flowrate_c = 50  # Example value
-    sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+    # sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
     # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
@@ -233,6 +233,7 @@ if __name__ == '__main__':
             tank = math.ceil((i * n_tanks) / (8))
 
             # Get the initial model temperature from the simulation (at t=0)
+            sol_me = PBR_model(initial_real_temp,water_flowrate_c,aah_flowrate_c,V=131,tspan=[0,3600],n=n_tanks)
             initial_model_temp = sol_me.y[3 + tank * 5, 0] - 273.15  # Convert from K to °C
 
             # Plot the comparison
@@ -245,8 +246,8 @@ if __name__ == '__main__':
         ax[i].set_title(f'Probe {i + 1}')
         ax[i].set_xlabel('Initial Real Temp (°C)')
         ax[i].set_ylabel('Initial Model Temp (°C)')
-        ax[i].set_xlim(20, 40)  # Adjust based on expected temperature range
-        ax[i].set_ylim(10, 30)  # Adjust based on expected temperature range
+        ax[i].set_xlim(15, 50)  # Adjust based on expected temperature range
+        ax[i].set_ylim(15, 50)  # Adjust based on expected temperature range
         ax[i].grid(True)
         ax[i].legend()
 
