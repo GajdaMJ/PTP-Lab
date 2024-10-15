@@ -81,7 +81,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         elif np.mod(i, 5)==4:
             xini[i] = xini_temp[4]
 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params, n)) 
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, t_eval=np.linspace(tspan[0], tspan[1], 400), args=(params, n)) 
     return sol_me
 
 def der_func(t,C, parameters, n=6):
@@ -198,7 +198,7 @@ def data_extract(data, x, offset=0):
 
 
 if __name__ == '__main__':
-    my_data = np.genfromtxt('Data\PFR\\18.09.40C_again.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+    my_data = np.genfromtxt('Data\PFR\\25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
     # Extracting all temperature data
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
@@ -245,7 +245,7 @@ if __name__ == '__main__':
         ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
         ax[i].set_ylabel('Change in Temperature (°C)')
-        ax[i].set_xlim(0, 15)
+        ax[i].set_xlim(0, 60)
         ax[i].grid(True)
         ax[i].legend()
 

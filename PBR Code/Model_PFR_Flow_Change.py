@@ -92,7 +92,7 @@ def PBR_model(T,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change=1800, n=6):
 
     xini_2 = sol_1.y[:, -1]
 
-    sol_2 = scipy.integrate.solve_ivp(der_func, [t_change,tspan[1]], xini_2, args=(params, n))
+    sol_2 = scipy.integrate.solve_ivp(der_func, [t_change,tspan[1]], xini_2, args=(params, n), rtol=1e-8, atol=1e-10)
 
     combined_time = np.concatenate((sol_1.t, sol_2.t))  # Combine time points
     combined_y = np.concatenate((sol_1.y, sol_2.y), axis=1)  # Combine solution arrays along axis 1 (columns)
