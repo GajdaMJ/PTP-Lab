@@ -221,28 +221,32 @@ if __name__ == '__main__':
     # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
-    
-
+        
     # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
+        real_temps = []  # To store the real temperatures
+        model_temps = []  # To store the model temperatures
+        
         for file in data_files:
             temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
 
             # Extract the initial temperature (first value) from the real data
             initial_real_temp = temp_data[0]
+            real_temps.append(initial_real_temp)  # Store the real temperatures
             
             tank = math.ceil((i * n_tanks) / (8))
 
             # Get the initial model temperature from the simulation (at t=0)
-            sol_me = PBR_model(initial_real_temp,water_flowrate_c,aah_flowrate_c,V=131,tspan=[0,3600],n=n_tanks)
+            sol_me = PBR_model(initial_real_temp, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
             initial_model_temp = sol_me.y[3 + tank * 5, 0] - 273.15  # Convert from K to °C
+            model_temps.append(initial_model_temp)  # Store the model temperatures
 
-            # Plot the comparison
-            ax[i].plot(
-                initial_real_temp,  # x: initial actual temperature
-                initial_model_temp,  # y: initial model temperature
-                '-o',label=f'{file}', color='red'
-            )
+        # Now plot the collected data for each probe
+        ax[i].plot(
+            real_temps,  # x: list of initial actual temperatures
+            model_temps,  # y: list of initial model temperatures
+            '-o', label=f'Probe {i + 1}', color='red'  # Line with points
+        )
         
         ax[i].set_title(f'Probe {i + 1}')
         ax[i].set_xlabel('Initial Real Temp (°C)')
@@ -250,8 +254,8 @@ if __name__ == '__main__':
         ax[i].set_xlim(15, 50)  # Adjust based on expected temperature range
         ax[i].set_ylim(15, 50)  # Adjust based on expected temperature range
         ax[i].minorticks_on()
-        ax[i].grid(which = 'major', linewidth = 2)
-        ax[i].grid(which = 'minor', linewidth = 0.5)
+        ax[i].grid(which='major', linewidth=2)
+        ax[i].grid(which='minor', linewidth=0.5)
         ax[i].legend()
 
     fig.suptitle('Initial Temperature: Real vs Model', fontsize=16)
