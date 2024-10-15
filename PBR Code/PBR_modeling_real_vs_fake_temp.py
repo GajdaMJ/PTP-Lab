@@ -241,7 +241,7 @@ if __name__ == '__main__':
             ax[i].plot(
                 initial_real_temp,  # x: initial actual temperature
                 initial_model_temp,  # y: initial model temperature
-                '-o',label=f'{file}', color='red'
+                '-0',label=f'{file}', color='red'
             )
         
         ax[i].set_title(f'Probe {i + 1}')

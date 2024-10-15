@@ -66,10 +66,9 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "cp_water": 4.186,             # Heat capacity (J/g/K)
         "cp_glass": 0.84,            #Heat capacity
         "Area_bead_per_tank": A_per_tank, # Area of beads per "tank"
-        "U" : 1.2122e-4#0.12122 # Oliver calc
+        "U" : 1.2122e-4#0.12122 W/m2*K but we want in W/cm2*K so e-4 
     }
 
-    # print(params['C_in_AAH']*params['C_in_water'])
     xini_temp = [cw_pure,0,0,T+273.15, T+273.15] # Initial Conditions 
     xini = np.zeros(5*n)
     for i in range(5*n):
@@ -116,13 +115,8 @@ def der_func(t,C, parameters, n=6):
     A = parameters["Area_bead_per_tank"]
     U = parameters["U"] 
 
-    rho_effective = epsilon* rho_water + (1-epsilon)* rho_glass
-    cp_effective = epsilon* cp_water + (1-epsilon) * cp_glass
-
     total_flow = flow[0]+flow[1]
     
- 
-
     #Differential equations
     for i in range(5*n):
         if i < 5:  # For the first set of concentrations and temperatures

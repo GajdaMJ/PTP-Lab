@@ -24,7 +24,6 @@ def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
     fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
 
     #Chemical constants
-
     #Water
     mm_water = 18.01528 # (g/mol)
     rho_water = 0.999842 # (g/ml)
@@ -152,15 +151,34 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    # data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
+    data_22c = data_extract('Data\Data from trade\CSTR\experiment14.10.csv')
 
-    sol_time, sol_y = CSTR_model(27.299999237060547,30,  185.82696533203125, 14.89059066772461, V=567)
+    sol_time, sol_y = CSTR_model(26.9, 29.99, 185.83, 14.89, V=567)
 
-    plt.plot(sol_time/60, sol_y[3, :]-273.15, label='think')
-    # plt.plot(data_22c[0], data_22c[1], label='real')
-    plt.xlabel('Time (minutes)')
-    #plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
-    plt.legend()
-    plt.title('Temperature')
+    plt.figure(figsize=(10, 6))  # Larger figure size for better visibility
+
+    # Plot simulation results (CSTR model)
+    plt.plot(sol_time/60, sol_y[3, :] - 273.15, label='Predicted (Model)', linestyle='--', color='b', linewidth=2)
+
+    # Plot experimental data
+    plt.plot(data_22c[0], data_22c[1], label='Experimental Data', linestyle='-', color='r', linewidth=2)
+
+    # Enhancing the plot aesthetics
+    plt.xlabel('Time [minutes]', fontsize=14, weight='bold')
+    plt.ylabel('Temperature [°C]', fontsize=14, weight='bold')
+    plt.title('CSTR Temperature Profile: Model vs Experimental Data (Step Change)', fontsize=16, weight='bold')
+    
+    # Adding grid for clarity
+    plt.grid(True, which='both', linestyle='--', linewidth=0.7)
+
+    # Adjusting legend for clarity
+    plt.legend(fontsize=12, loc='best')
+
+    # Limiting x-axis to the relevant time frame
+    plt.xlim(0, 55)
+
+    # Applying tight layout for better spacing of elements
+    plt.tight_layout()
+
+    # Displaying the plot
     plt.show()
