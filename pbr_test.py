@@ -1,11 +1,46 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-import scipy.integrate
 # Assume reaction is 1st order wrt both components
 # Assume isothermal (no exotherm)
 # Assume constant density
 
+def master_function(fun,tspan, y0, method='rk4', number_of_points=100):
+    '''General function to solve system of differential equations. Does not work on single differential equations. \n
+    fun = function 
+    y0 = vector of initial conditions
+    optional:\n
+    method = You can select the method with which your system of differential equations will be evaluated. Default set to second order Runge-Kutta. \n
+    Supported methods : midpoint method ('midpoint'), euler method ('euler'), Classical second order Runge-Kutta ('rk2'), classical fourth order Runge-Kutta ('rk4').
+    number_of_points = how many steps. Default set to 100. Increasing this reduces error but increases computation time. '''
+    dt = (tspan[1] - tspan[0])/number_of_points
+    t = np.linspace(tspan[0], tspan[1], number_of_points+1)
+    y = np.zeros((number_of_points+1, len(y0))) # len(y0) because you would need an initial condition for each derivative.
+    for i in range(len(y0)): #initial conditions as a loop to ensure universability.
+        y[0,i] = y0[i]
+    if method == 'midpoint':
+        for i in range(number_of_points):
+            k1 = fun(t[i], y[i,:])
+            k2 = fun(t[i] + dt*0.5, y[i,:] + 0.5*dt*k1)
+            y[i+1,:] = y[i,:] + dt * k2
+    elif method == 'euler':
+        for i in range(number_of_points):
+            y[i+1,:] = y[i,:] + dt * fun(t[i], y[i,:])
+    elif method == 'rk2':
+        for i in range(number_of_points):
+            k1 = fun(t[i], y[i,:])
+            k2 = fun(t[i] + dt, y[i] + dt*k1)
+            y[i+1,:] = y[i] + dt*0.5*(k1+k2)
+    elif method == 'rk4':
+        for i in range(number_of_points):
+            k1 = fun(t[i], y[i,:])
+            k2 = fun(t[i] + dt*0.5, y[i,:] + 0.5*dt*k1)
+            k3 = fun(t[i] + dt*0.5, y[i,:] + 0.5*dt*k2)
+            k4 = fun(t[i] +dt, y[i,:] + dt*k3)
+            y[i+1,:] = y[i] + dt*((1/6)*k1 + (1/3)*(k2+k3) + (1/6)*k4)
+    else:
+        return 'Unknown method specified. Check documentation for supported methods' # In case an unknown method is specified
+    return t, y
 
 def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
@@ -24,14 +59,13 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
     fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
 
-    #Chemical constants
 
-    #Water
+    
+    #Chemical constants
     mm_water = 18.01528 # (g/mol)
     rho_water = 0.999842 # (g/ml)
     cw_pure = rho_water/mm_water # (mol/ml)
 
-    #Acetic acid
     mm_AAH = 102.089 # (g/mol)
     rho_AAH = 1.082 # (g/ml)
     caah_pure = rho_AAH/mm_AAH # (mol/ml)
@@ -54,9 +88,10 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "rho": 1,            # Density (g/ml)
         "cp": 4.186             # Heat capacity (J/g/K)
     }
-    # print(params['C_in_AAH']*params['C_in_water'])
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
+    # 
+
+    sol_me = master_function(lambda t, C: der_func(t, C, params), tspan, xini, method='rk4', number_of_points=300) #Master function is a differential equation solver made for Numerical Methods.
     return sol_me
 
 def der_func(t,C, parameters):
@@ -129,7 +164,7 @@ def data_extract(data_path):
     data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
 
     #Get temperature
-    elapsed_time, temp = temp_extract(data_numpy) 
+    elapsed_time, temp = temp_extract(data_numpy, x='P120_Flow') 
 
     #Get AAH Flowrate
     elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
@@ -137,22 +172,22 @@ def data_extract(data_path):
     #Get Water Flowrate
     elapsed_time_water, water_flowrate_vector = temp_extract(data_numpy, x='P100_Flow')
 
-    initial_temperature = np.min(temp) # Minimum temp = ini temp
+ #   initial_temperature = np.min(temp) # Minimum temp = ini temp
+    inital_temperature = 273
     aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
     water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
-    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
+    return elapsed_time, temp, inital_temperature, aah_flowrate, water_flowrate
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
+    data_22c = data_extract("Data\PFR\\25.09.30C.csv")
     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
 
     # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
     # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
     plt.plot(data_22c[0], data_22c[1], label='real')
     plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
+
     plt.ylabel('Temperature')
     plt.legend()
     plt.title('Temperature')

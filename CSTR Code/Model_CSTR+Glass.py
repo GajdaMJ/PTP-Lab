@@ -91,7 +91,7 @@ def der_func(t,C, parameters):
     dcdt[0] =  (total_flow/V)*(C_in_w - C[0])    - reaction_rate # Water Concentration derv
     dcdt[1] =  (total_flow/V)*(C_in_AAH - C[1])  - reaction_rate  # Anhydride Concentration derv
     dcdt[2] =  (total_flow/V)*(0 - C[2]) + 2*reaction_rate  # Acetic acid 
-    dcdt[3] =  (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * reaction_rate # Temperature part
+    dcdt[3] =  (total_flow/V) * (inlet_temp-C[3]) - H/(rho*cp) * reaction_rate - 0.1e-6*0.5*(293-C[3])# Temperature part
     return dcdt
 
 def temp_extract(data, x="T200_PV", offset=0):
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
     # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
     # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
+    plt.plot(sol_me.t/60 + 1.49, sol_me.y[3, :]-273.15, label='think')
     plt.plot(data_22c[0], data_22c[1], label='real')
     plt.xlabel('Time (minutes)')
     plt.xlim(0, np.max(data_22c[1]))
