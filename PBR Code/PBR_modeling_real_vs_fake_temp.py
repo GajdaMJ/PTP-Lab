@@ -202,7 +202,7 @@ if __name__ == '__main__':
 
     # Load and extract temperature data from CSV files
     for file in data_files:
-        my_data = np.genfromtxt(f'Data/PFR/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+        my_data = np.genfromtxt(f'Data/PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
         # Extract temperature data for each sensor
         file_results = {}
