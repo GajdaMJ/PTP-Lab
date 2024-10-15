@@ -194,33 +194,6 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
-if __name__ == '__main__':
-    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C','25.09.22C(att.55.conductivityweird)','25.09.30C','25.09.33C','PFR_30-35_100_10-20']
-    results = {}
-
-    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T400_PV']
-
-    # Load and extract temperature data from CSV files
-    for file in data_files:
-        my_data = np.genfromtxt(f'PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
-
-        # Extract temperature data for each sensor
-        file_results = {}
-        for t_value in t_values:
-            elap_time, temp_c, _ = data_extract(my_data, t_value)  # Ignore offset_time
-            file_results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
-        
-        results[file] = file_results
-
-    # Simulate the model with PBR
-    n_tanks = 16
-    water_flowrate_c = 100  # Example value
-    aah_flowrate_c = 50  # Example value
-    # sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
-
-    # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
-    ax = ax.flatten()
 
     # Plot initial actual temperature vs initial model temperature for each file
 if __name__ == '__main__':
@@ -274,23 +247,23 @@ if __name__ == '__main__':
 
         # Now plot all collected points
         ax[i].plot(
-            waterbath_temps,  # x: water bath temperatures
-            temp_probe_temps,  # y: temperature probe values
+            temp_probe_temps,  # x: temperature probe values
+            waterbath_temps,  # y: water bath temperatures
             'ro', label='Data Points'  # Red circles for data points
         )
 
         # Plot the best-fit line across all collected data points
-        if len(waterbath_temps) > 1:  # Ensure we have enough points to fit a line
-            # Fit a line to all the collected data (waterbath_temps vs temp_probe_temps)
-            m, b = np.polyfit(waterbath_temps, temp_probe_temps, 1)  # Linear fit (y = mx + b)
+        if len(temp_probe_temps) > 1:  # Ensure we have enough points to fit a line
+            # Fit a line to all the collected data (temp_probe_temps vs waterbath_temps)
+            m, b = np.polyfit(temp_probe_temps, waterbath_temps, 1)  # Linear fit (y = mx + b)
 
             # Generate x-values for the best fit line (to plot a continuous line)
-            waterbath_range = np.linspace(min(waterbath_temps), max(waterbath_temps), 100)
+            temp_probe_range = np.linspace(min(temp_probe_temps), max(temp_probe_temps), 100)
 
             # Plot the best-fit line
             ax[i].plot(
-                waterbath_range,  # x values
-                m * waterbath_range + b,  # y = mx + b
+                temp_probe_range,  # x values (temperature probe)
+                m * temp_probe_range + b,  # y = mx + b (water bath)
                 '-', label='Best Fit Line', color='blue'  # Line without points
             )
             
@@ -298,8 +271,8 @@ if __name__ == '__main__':
             print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
 
         ax[i].set_title(f'Temperature Probe {i + 1}')
-        ax[i].set_xlabel('Water Bath Temp (°C)')
-        ax[i].set_ylabel('Probe Temp (°C)')
+        ax[i].set_xlabel('Probe Temp (°C)')
+        ax[i].set_ylabel('Water Bath Temp (°C)')
         ax[i].set_xlim(20, 45) 
         ax[i].set_ylim(20, 45)  
         ax[i].minorticks_on()
@@ -307,6 +280,6 @@ if __name__ == '__main__':
         ax[i].grid(which='minor', linewidth=0.5)
         ax[i].legend()
 
-    fig.suptitle('Initial Temperature: Water Bath vs Temperature Probes', fontsize=16)
+    fig.suptitle('Initial Temperature: Probe vs Water Bath', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
