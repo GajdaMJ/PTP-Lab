@@ -248,6 +248,13 @@ if __name__ == '__main__':
             '-o', label=f'Probe {i + 1}', color='red'  # Line with points
         )
         
+        # Fit a line to the data (real_temps vs model_temps)
+        if len(real_temps) > 1:  # Ensure we have enough points to fit a line
+            m, b = np.polyfit(real_temps, model_temps, 1)  # Linear fit (y = mx + b)
+            
+            # Print the equation of the line
+            print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
+        
         ax[i].set_title(f'Probe {i + 1}')
         ax[i].set_xlabel('Initial Real Temp (°C)')
         ax[i].set_ylabel('Initial Model Temp (°C)')
