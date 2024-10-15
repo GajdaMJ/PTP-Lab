@@ -89,7 +89,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
 
 
-    sol_tank1 = master_function(lambda t, C: der_func_first_reactor(t, C, params), tspan, xini, method='rk4', number_of_points=300)
+    sol_tank1 = master_function(lambda t, C: der_func_first_reactor(t, C, params), tspan, xini, method='rk4', number_of_points=100)
 
     # Initialize list of solutions for tanks 2 to 7
     sol_tanks = [sol_tank1]
@@ -170,7 +170,7 @@ def temp_extract(data, x, offset=0):
     # Find the first point where flow transitions from < 1 to > 1
     start_time = None
     for i in range(1, len(flow_values)):
-        if flow_values[i-1] < 1 and flow_values[i] > 1:
+        if flow_values[i-1] != flow_values[i]:
             start_time = flow_dates[i]
             break
 
@@ -193,10 +193,7 @@ def temp_extract(data, x, offset=0):
 my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
 #Get temperature
-elapsed_time_c_208, temp_c = temp_extract(my_data,'T208_PV')
-elapsed_time_c_20, temp_c = temp_extract(my_data,)
-
-
+elapsed_time, temp_c = temp_extract(my_data,'T201_PV')
 
 #Get AAH Flowrate
 elapsed_time_c_aah, aah_flowrate_c_vector = temp_extract(my_data, x="P120_Flow")
@@ -210,109 +207,8 @@ water_flowrate_c = np.median(water_flowrate_c_vector)
 
 
 
-sol_me = CSTR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=137)
+sol_tanks = CSTR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=137)
 
-# Plot the data
-fig, ax = plt.subplots(2, 4, figsize=(30, 10), sharex=True, sharey=True)
-ax = ax.flatten()
-for i in range(0,8):
-# Plot for 208 data
-    ax[0,0].plot(elapsed_time_c, temp_c['208'] - temp_208[0], 'o', label='T208 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-    ax[0,0].plot(elapsed_time_interp, temp_208_smooth - temp_208[0], '-', color='#1f77b4', label='T208 Smoothed Curve')  # Blue for Smoothed Curve
-
-    ax[0,0].plot(elapsed_time_208, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {8}')
-    ax[0,0].set_title('T208 Data')
-    ax[0,0].set_xlabel('Elapsed Time (min)')
-    ax[0,0].set_ylabel('Temperature (°C)')
-    ax[0,0].grid(True)
-    ax[0,0].legend()
-
-# # Plot for 207 data
-# ax[0,1].plot(elapsed_time_207, temp_207 - temp_207[0], 'o', label='T207 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-# ax[0,1].plot(elapsed_time_interp, temp_207_smooth - temp_207[0], '-', color='#1f77b4', label='T207 Smoothed Curve')  # Blue for Smoothed Curve
-
-# ax[0,1].plot(elapsed_time_201, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {7}')
-# ax[0,1].set_title('T207 Data')
-# ax[0,1].set_xlabel('Elapsed Time (min)')
-# ax[0,1].grid(True)
-# ax[0,1].legend()
-
-# # Plot for 206 data
-# ax[0,2].plot(elapsed_time_206, temp_206 - temp_206[0], 'o', label='T206 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-# ax[0,2].plot(elapsed_time_interp, temp_206_smooth -temp_206[0], '-', color='#1f77b4', label='T206 Smoothed Curve')  # Blue for Smoothed Curve
-
-# ax[0,2].plot(elapsed_time_201, sol_tanks[5][1][:, 3]-sol_tanks[5][1][0,3], color = 'red',label=f'Temperature Tank {6}')
-# ax[0,2].set_title('T206 Data')
-# ax[0,2].set_xlabel('Elapsed Time (min)')
-# ax[0,2].grid(True)
-# ax[0,2].legend()
-
-# # Plot for 205 data
-# ax[0,3].plot(elapsed_time_205, temp_205 - temp_205[0], 'o', label='T205 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-# ax[0,3].plot(elapsed_time_interp, temp_205_smooth - temp_205[0], '-', color='#1f77b4', label='T205 Smoothed Curve')  # Blue for Smoothed Curve
-
-# ax[0,3].plot(elapsed_time_201, sol_tanks[4][1][:, 3]-sol_tanks[4][1][0,3], color = 'red',label=f'Temperature Tank {5}')
-# ax[0,3].set_title('T205 Data')
-# ax[0,3].set_xlabel('Elapsed Time (min)')
-# ax[0,3].grid(True)
-# ax[0,3].legend()
-
-# # Plot for 204 data
-# ax[1,0].plot(elapsed_time_204, temp_204- temp_204[0], 'o', label='T204 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-# ax[1,0].plot(elapsed_time_interp, temp_204_smooth - temp_204[0], '-', color='#1f77b4', label='T204 Smoothed Curve')  # Blue for Smoothed Curve
-
-# ax[1,0].plot(elapsed_time_201, sol_tanks[3][1][:, 3]-sol_tanks[3][1][0,3], color = 'red',label=f'Temperature Tank {4}')
-# ax[1,0].set_title('T204 Data')
-# ax[1,0].set_xlabel('Elapsed Time (min)')
-# ax[1,0].set_ylabel('Temperature (°C)')
-# ax[1,0].grid(True)
-# ax[1,0].legend()
-
-# # Plot for 203 data
-# ax[1,1].plot(elapsed_time_203, temp_203 - temp_203[0], 'o', label='T203 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-# ax[1,1].plot(elapsed_time_interp, temp_203_smooth - temp_203[0], '-', color='#1f77b4', label='T203 Smoothed Curve')  # Blue for Smoothed Curve
-
-# ax[1,1].plot(elapsed_time_201, sol_tanks[2][1][:, 3]-sol_tanks[2][1][0,3], color = 'red',label=f'Temperature Tank {3}')
-# ax[1,1].set_title('T203 Data')
-# ax[1,1].set_xlabel('Elapsed Time (min)')
-# ax[1,1].grid(True)
-# ax[1,1].legend()
-
-# # Plot for 202 data
-# ax[1,2].plot(elapsed_time_202, temp_202 - temp_202[0], 'o', label='T202 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-# ax[1,2].plot(elapsed_time_interp, temp_202_smooth - temp_202[0], '-', color='#1f77b4', label='T202 Smoothed Curve')  # Blue for Smoothed Curve
-
-# ax[1,2].plot(elapsed_time_201, sol_tanks[1][1][:, 3]-sol_tanks[1][1][0,3], color = 'red',label=f'Temperature Tank {2}')
-# ax[1,2].set_title('T202 Data')
-# ax[1,2].set_xlabel('Elapsed Time (min)')
-# ax[1,2].grid(True)
-# ax[1,2].legend()
-
-# # Plot for 201 data
-# ax[1,3].plot(elapsed_time_201, temp_201 - temp_201[0], 'o', label='T201 Raw Data', color='#ff7f0e')  # Orange for Raw Data
-# ax[1,3].plot(elapsed_time_interp, temp_201_smooth - temp_201[0], '-', color='#1f77b4', label='T201 Smoothed Curve')  # Blue for Smoothed Curve
-
-# ax[1,3].plot(elapsed_time_201, sol_tanks[0][1][:, 3]-sol_tanks[0][1][0,3], color = 'red',label=f'Temperature Tank {1}')
-# ax[1,3].set_title('T201 Data')
-# ax[1,3].set_xlabel('Elapsed Time (min)')
-# ax[1,3].grid(True)
-# ax[1,3].legend()
-
-# Adjust layout to prevent label overlap and set a global title
-fig.suptitle('T200_PV Temperature Data over Time', fontsize=16)
-plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust for title space
-
-# Show the plot
+#plt.plot(elapsed_time, sol_tanks[6][1][:, 3]-sol_tanks[6][1][0,3], color = 'red',label=f'Temperature Tank {8}')
+plt.plot(elapsed_time, temp_c)
 plt.show()
-
-# # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-# # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-# plt.plot(sol_me[0]/60, sol_me[1][:, 3]-273.15, label='think')
-# plt.plot(elapsed_time_c, temp_c, label='real')
-# plt.xlabel('Time (minutes)')
-# plt.xlim(0, np.max(elapsed_time_22c))
-# plt.ylabel('Temperature')
-# plt.legend()
-# plt.title('Temperature')
-# plt.show()
-
