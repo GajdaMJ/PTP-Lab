@@ -194,7 +194,6 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
-
 if __name__ == '__main__':
     data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C']
     results = {}
@@ -219,33 +218,38 @@ if __name__ == '__main__':
     aah_flowrate_c = 50  # Example value
     sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
-    # Create subplots for each reactor stage
-    fig, ax = plt.subplots(3, 4, figsize=(20, 12), sharex=True, sharey=True)
+    # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
+    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
 
-    # Plot data for each file
+    # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
         for file in data_files:
-            # temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
-            elapsed_time = results[file][t_values[-(i+1)]]['elapsed_time']
-        tank = math.ceil((i * n_tanks) / (8))
-        
-        # Scatter plot of actual vs model temperature for all data files
-        for k in (data_files):
-            temp_data = np.array(results[k][t_values[-(i+1)]]['temperature'])
+            temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
+
+            # Extract the initial temperature (first value) from the real data
+            initial_real_temp = temp_data[0]
+            
+            tank = math.ceil((i * n_tanks) / (8))
+
+            # Get the initial model temperature from the simulation (at t=0)
+            initial_model_temp = sol_me.y[3 + tank * 5, 0] - 273.15  # Convert from K to °C
+
+            # Plot the comparison
             ax[i].scatter(
-                temp_data[0],  # Time in minutes for the first point from the model
-                sol_me.y[3 + tank * 5, 0] - 273.15,  # Model temperature (converted to Celsius)
-                label=f'Initial Model Temp {k}',
-                color='red'
+                initial_real_temp,  # x: initial actual temperature
+                initial_model_temp,  # y: initial model temperature
+                label=f'{file}', color='red'
             )
         
-        ax[i].set_title(f'Temperature Probe {i + 1}')
-        ax[i].set_xlim(0, 50)
-        ax[i].set_ylim(0, 40)
+        ax[i].set_title(f'Probe {i + 1}')
+        ax[i].set_xlabel('Initial Real Temp (°C)')
+        ax[i].set_ylabel('Initial Model Temp (°C)')
+        ax[i].set_xlim(20, 40)  # Adjust based on expected temperature range
+        ax[i].set_ylim(10, 30)  # Adjust based on expected temperature range
         ax[i].grid(True)
         ax[i].legend()
 
-    fig.suptitle('Temperature Data from 3 CSV Files', fontsize=16)
+    fig.suptitle('Initial Temperature: Real vs Model', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
