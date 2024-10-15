@@ -194,20 +194,21 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
+
 if __name__ == '__main__':
     data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C']
     results = {}
 
     t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
 
+    # Load and extract temperature data from CSV files
     for file in data_files:
-        # Load the data from CSV
         my_data = np.genfromtxt(f'Data/PFR/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
-        
+
         # Extract temperature data for each sensor
         file_results = {}
         for t_value in t_values:
-            elap_time, temp_c, _ = data_extract(my_data, t_value)  # Use "_" to ignore the third return value (offset_time)
+            elap_time, temp_c, _ = data_extract(my_data, t_value)  # Ignore offset_time
             file_results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
         
         results[file] = file_results
@@ -225,18 +226,23 @@ if __name__ == '__main__':
     # Plot data for each file
     for i in range(0, 8):
         for file in data_files:
-            temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
+            # temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
             elapsed_time = results[file][t_values[-(i+1)]]['elapsed_time']
-            ax[i].plot(elapsed_time, temp_data, label=f'{file} Real Temp')
-        
         tank = math.ceil((i * n_tanks) / (8))
         
-        for k in range(len(data_files)):
-        #plotting actual temperature vs model temperature
-            ax[i].scatter(temp_data[0],sol_me.y[3+tank*5,0]- 273.15+10, label= f'At initial temperature {data_files[k]}', color = 'red')
+        # Scatter plot of actual vs model temperature for all data files
+        for k in (data_files):
+            temp_data = np.array(results[k][t_values[-(i+1)]]['temperature'])
+            ax[i].scatter(
+                temp_data[0],  # Time in minutes for the first point from the model
+                sol_me.y[3 + tank * 5, 0] - 273.15,  # Model temperature (converted to Celsius)
+                label=f'Initial Model Temp {k}',
+                color='red'
+            )
+        
         ax[i].set_title(f'Temperature Probe {i + 1}')
-        ax[i].set_xlim(0, 60)
-        ax[i].set_ylim(20, 40)
+        ax[i].set_xlim(0, 50)
+        ax[i].set_ylim(0, 40)
         ax[i].grid(True)
         ax[i].legend()
 
