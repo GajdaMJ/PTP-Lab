@@ -221,28 +221,28 @@ if __name__ == '__main__':
     # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
-        
+
     # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
-        waterbath_temps = []  # To store the real temperatures
-        temp_probe_temps = []  # To store the model temperatures
-        
+        waterbath_temps = []  # To store water bath temperatures
+        temp_probe_temps = []  # To store probe temperatures
+
         for file in data_files:
             temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
 
             # Extract the initial temperature (first value) from the real data
             initial_real_temp = temp_data[0]
             temp_probe_temps.append(initial_real_temp)  # Store the real temperatures
-            
-            tank = math.ceil((i * n_tanks) / (8))
 
-            # Get the initial model temperature from the simulation (at t=0)
-            waterbath_temps = np.array(results[file][t_values[8]]['temperature'])
+            # Get the water bath temperature (assuming the last value in t_values is T400_PV)
+            waterbath_temp_data = np.array(results[file][t_values[8]]['temperature'])  # T400_PV is index 8
+            initial_waterbath_temp = waterbath_temp_data[0]
+            waterbath_temps.append(initial_waterbath_temp)  # Store the water bath temperatures
 
         # Now plot the collected data for each probe
         ax[i].plot(
-            waterbath_temps,  # x: list of initial actual temperatures
-            temp_probe_temps,  # y: list of initial model temperatures
+            temp_probe_temps,  # y: temperature probe values
+            waterbath_temps,  # x: water bath temperatures
             '-o', label=f'Probe {i + 1}', color='red'  # Line with points
         )
         
@@ -252,17 +252,17 @@ if __name__ == '__main__':
             
             # Print the equation of the line
             print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
-        
+
         ax[i].set_title(f'Probe {i + 1}')
-        ax[i].set_xlabel('Initial Real Temp (°C)')
-        ax[i].set_ylabel('Initial Model Temp (°C)')
-        ax[i].set_xlim(15, 50)  # Adjust based on expected temperature range
-        ax[i].set_ylim(15, 50)  # Adjust based on expected temperature range
+        ax[i].set_ylabel('Water Bath Temp (°C)')
+        ax[i].set_xlabel('Probe Temp (°C)')
+        ax[i].set_xlim(20, 45)  # Adjust based on expected temperature range
+        ax[i].set_ylim(20, 45)  # Adjust based on expected temperature range
         ax[i].minorticks_on()
         ax[i].grid(which='major', linewidth=2)
         ax[i].grid(which='minor', linewidth=0.5)
         ax[i].legend()
 
-    fig.suptitle('Initial Temperature: Real vs Model', fontsize=16)
+    fig.suptitle('Initial Temperature: Water Bath vs Probe', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
