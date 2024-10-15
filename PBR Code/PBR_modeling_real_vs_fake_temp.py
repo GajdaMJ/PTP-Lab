@@ -195,14 +195,14 @@ def data_extract(data, x, offset=0):
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
 if __name__ == '__main__':
-    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C']
+    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C','25.09.22C(att.55.conductivityweird)','25.09.30C','25.09.33C','PFR_30-35_100_10-20']
     results = {}
 
-    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
+    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T400_PV']
 
     # Load and extract temperature data from CSV files
     for file in data_files:
-        my_data = np.genfromtxt(f'Data/PFR/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+        my_data = np.genfromtxt(f'PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
         # Extract temperature data for each sensor
         file_results = {}
@@ -221,39 +221,92 @@ if __name__ == '__main__':
     # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
-    
+
+    # Plot initial actual temperature vs initial model temperature for each file
+if __name__ == '__main__':
+    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C', '25.09.22C(att.55.conductivityweird)', '25.09.30C', '25.09.33C', 'PFR_30-35_100_10-20']
+    results = {}
+
+    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T400_PV']
+
+    # Load and extract temperature data from CSV files
+    for file in data_files:
+        my_data = np.genfromtxt(f'PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+
+        # Extract temperature data for each sensor
+        file_results = {}
+        for t_value in t_values:
+            elap_time, temp_c, _ = data_extract(my_data, t_value)  # Ignore offset_time
+            file_results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
+        
+        results[file] = file_results
+
+    # Simulate the model with PBR
+    n_tanks = 16
+    water_flowrate_c = 100  # Example value
+    aah_flowrate_c = 50  # Example value
+
+    # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
+    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
+    ax = ax.flatten()
 
     # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
+        waterbath_temps = []  # To store all water bath temperatures from all files
+        temp_probe_temps = []  # To store all probe temperatures from all files
+
+        # Collect data across all files
         for file in data_files:
+            # Ensure the t_value indices don't exceed the available data
+            if -(i + 1) < -len(t_values):
+                continue
+
             temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
 
             # Extract the initial temperature (first value) from the real data
             initial_real_temp = temp_data[0]
-            
-            tank = math.ceil((i * n_tanks) / (8))
+            temp_probe_temps.append(initial_real_temp)  # Store the real temperatures
 
-            # Get the initial model temperature from the simulation (at t=0)
-            sol_me = PBR_model(initial_real_temp,water_flowrate_c,aah_flowrate_c,V=131,tspan=[0,3600],n=n_tanks)
-            initial_model_temp = sol_me.y[3 + tank * 5, 0] - 273.15  # Convert from K to °C
+            # Get the water bath temperature (assuming the last value in t_values is T400_PV)
+            waterbath_temp_data = np.array(results[file][t_values[8]]['temperature'])  # T400_PV is index 8
+            initial_waterbath_temp = waterbath_temp_data[0]
+            waterbath_temps.append(initial_waterbath_temp)  # Store the water bath temperatures
 
-            # Plot the comparison
+        # Now plot all collected points
+        ax[i].plot(
+            waterbath_temps,  # x: water bath temperatures
+            temp_probe_temps,  # y: temperature probe values
+            'ro', label='Data Points'  # Red circles for data points
+        )
+
+        # Plot the best-fit line across all collected data points
+        if len(waterbath_temps) > 1:  # Ensure we have enough points to fit a line
+            # Fit a line to all the collected data (waterbath_temps vs temp_probe_temps)
+            m, b = np.polyfit(waterbath_temps, temp_probe_temps, 1)  # Linear fit (y = mx + b)
+
+            # Generate x-values for the best fit line (to plot a continuous line)
+            waterbath_range = np.linspace(min(waterbath_temps), max(waterbath_temps), 100)
+
+            # Plot the best-fit line
             ax[i].plot(
-                initial_real_temp,  # x: initial actual temperature
-                initial_model_temp,  # y: initial model temperature
-                '-0',label=f'{file}', color='red'
+                waterbath_range,  # x values
+                m * waterbath_range + b,  # y = mx + b
+                '-', label='Best Fit Line', color='blue'  # Line without points
             )
-        
-        ax[i].set_title(f'Probe {i + 1}')
-        ax[i].set_xlabel('Initial Real Temp (°C)')
-        ax[i].set_ylabel('Initial Model Temp (°C)')
-        ax[i].set_xlim(15, 50)  # Adjust based on expected temperature range
-        ax[i].set_ylim(15, 50)  # Adjust based on expected temperature range
+            
+            # Print the equation of the line
+            print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
+
+        ax[i].set_title(f'Temperature Probe {i + 1}')
+        ax[i].set_xlabel('Water Bath Temp (°C)')
+        ax[i].set_ylabel('Probe Temp (°C)')
+        ax[i].set_xlim(20, 45) 
+        ax[i].set_ylim(20, 45)  
         ax[i].minorticks_on()
-        ax[i].grid(which = 'major', linewidth = 2)
-        ax[i].grid(which = 'minor', linewidth = 0.5)
+        ax[i].grid(which='major', linewidth=2)
+        ax[i].grid(which='minor', linewidth=0.5)
         ax[i].legend()
 
-    fig.suptitle('Initial Temperature: Real vs Model', fontsize=16)
+    fig.suptitle('Initial Temperature: Water Bath vs Temperature Probes', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
