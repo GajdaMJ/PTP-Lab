@@ -194,9 +194,8 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
-
 if __name__ == '__main__':
-    data_files = ['18.09.25.C_again', '18.09.40C_again', '25.09.30C']
+    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C']
     results = {}
 
     t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
@@ -208,7 +207,7 @@ if __name__ == '__main__':
         # Extract temperature data for each sensor
         file_results = {}
         for t_value in t_values:
-            elap_time, temp_c = data_extract(my_data, t_value)
+            elap_time, temp_c, _ = data_extract(my_data, t_value)  # Use "_" to ignore the third return value (offset_time)
             file_results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
         
         results[file] = file_results
