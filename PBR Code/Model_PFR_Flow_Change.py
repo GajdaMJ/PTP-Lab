@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
+import math
 import scipy.integrate
 # Assume reaction is 1st order wrt both components
 # Assume isothermal (no exotherm)
@@ -51,7 +52,7 @@ def PBR_model(T,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change=1800, n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 1.8e6,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
         "Ea": 45622.34,             # Activation energy (J/mol)
@@ -139,7 +140,7 @@ def der_func(t,C, parameters, n=6):
            dcdt[0] = (total_flow / V) * (C_in_w - C[0]) - C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Water Concentration derivative
            dcdt[1] = (total_flow / V) * (C_in_AAH - C[1]) - C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Anhydride Concentration derivative
            dcdt[2] = (total_flow / V) * (0 - C[2]) + 2 * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Acetic acid concentration derivative
-           dcdt[3] = (total_flow / V) * (inlet_temp - C[3]) - H / (rho_effective * cp_effective) * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) + (U * A) / (rho_effective * cp_effective * V) * (C[i+1] - C[3])  # Reactor temperature derivative
+           dcdt[3] = (total_flow / V) * (inlet_temp - C[3]) - H / (rho_water *cp_water) * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) + (U * A) / (rho_water *cp_water * V) * (C[i+1] - C[3])  # Reactor temperature derivative
            # Glass bead temperature derivative
            dcdt[4] = (U * A) / (rho_glass * cp_glass * V) * (C[3] - C[4])  # Temperature change of glass beads
         else:
@@ -151,7 +152,7 @@ def der_func(t,C, parameters, n=6):
             elif np.mod(i, 5) == 2:
                 dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) + 2 * C[i - 2] * C[i - 1] * k0 * np.exp(-Ea / (R * C[i + 1])) # AA
             elif np.mod(i, 5) == 3:
-                dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) - H / (rho_effective * cp_effective) * C[i - 3] * C[i - 2] * k0 * np.exp(-Ea / (R * C[i])) + (U * A) / (rho_effective * cp_effective * V) * (C[i+1] - C[i]) 
+                dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) - H / (rho_water *cp_water) * C[i - 3] * C[i - 2] * k0 * np.exp(-Ea / (R * C[i])) + (U * A) / (rho_water *cp_water * V) * (C[i+1] - C[i]) 
             elif np.mod(i, 5) == 4:
                 dcdt[i] = (U * A) / (rho_glass * cp_glass * V) * (C[i - 1] - C[i])  # Temperature change of glass beads for additional reactors
     return dcdt
@@ -230,13 +231,13 @@ if __name__ == '__main__':
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks=14
+    n_tanks=16
 
     aah_flowrate_1 = aah_flowrate_c_vector[7]
-    aah_flowrate_2 = aah_flowrate_c_vector[-1]
+    aah_flowrate_2 = aah_flowrate_c_vector[-8]
     
     # Run PBR model simulation
-    sol_time, sol_y = PBR_model(20, water_flowrate_c, aah_flowrate_1, aah_flowrate_2, V=131, tspan=[0, 3600], t_change=1800, n=n_tanks)
+    sol_time, sol_y = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_1, aah_flowrate_2, V=131, tspan=[0, 3600], t_change=9*60, n=n_tanks)
 
     # Create subplots for each reactor stage
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
@@ -244,22 +245,30 @@ if __name__ == '__main__':
 
     retention_time = 2 + 2/60 #minutes
 
+   # Create subplots for each reactor stage
+    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
+    ax = ax.flatten()
+
+    retention_time = 2 + 2/60 #minutes
+
+
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
         elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
+        tank = math.ceil((i*n_tanks)/(8))
 
         # Plot real temperature data
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_time / 60  + i * retention_time / n_tanks, sol_y[3 + i*5, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_time / 60 , sol_y[3 + tank*5, :] - 273.15 - initial_temperature, color='#1f77b4', label='Model Prediction')
 
         # Set plot title, labels, and grid
-        ax[i].set_title(f'Reactor {i + 1} Data')
+        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
-        ax[i].set_ylabel('Temperature (°C)')
-        ax[i].set_xlim(0, 60)
+        ax[i].set_ylabel('Change in Temperature (°C)')
+        ax[i].set_xlim(0, 30)
         ax[i].grid(True)
         ax[i].legend()
 

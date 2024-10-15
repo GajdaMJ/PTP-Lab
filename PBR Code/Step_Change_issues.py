@@ -23,6 +23,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
     fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
+
     #dont use ml/s use l/s
     #Chemical constants
 
@@ -66,6 +67,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Area_bead_per_tank": A_per_tank, # Area of beads per "tank"
         "U" : 1.2122e-4#0.12122 # Oliver calc
     }
+    print(params['C_in_AAH'])
     # print(params['C_in_AAH']*params['C_in_water'])
     xini_temp = [cw_pure,0,0,T+273.15, T+273.15] # Initial Conditions 
     xini = np.zeros(5*n)
@@ -217,12 +219,13 @@ if __name__ == '__main__':
     initial_temperature = np.min(temp_c)
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
-    print(initial_temperature)
+
     n_tanks=16
     aah_flowrate_1 = aah_flowrate_c_vector[7]
-    aah_flowrate_2 = aah_flowrate_c_vector[-1]
+    aah_flowrate_2 = aah_flowrate_c_vector[-8]
+    print(aah_flowrate_2)
     # Run PBR model simulation
-    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_1, V=131, tspan=[0, 3600], n=n_tanks)
+    # sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_1, V=131, tspan=[0, 3600], n=n_tanks)
     sol_me2 = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_2, V=131, tspan=[0, 3600], n=n_tanks)
 
     # Create subplots for each reactor stage
@@ -242,7 +245,7 @@ if __name__ == '__main__':
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60 , sol_me.y[3 + tank*5, :] - 273.15 - initial_temperature, color='#ff77ba', label='Model Prediction1')
+        # ax[i].plot(sol_me.t / 60 , sol_me.y[3 + tank*5, :] - 273.15 - initial_temperature, color='#ff77ba', label='Model Prediction1')
         ax[i].plot(sol_me2.t / 60 , sol_me2.y[3 + tank*5, :] - 273.15 - initial_temperature, color='#1f77b4', label='Model Prediction')
         # Set plot title, labels, and grid
         ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')

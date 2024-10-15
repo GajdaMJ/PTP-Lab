@@ -46,6 +46,8 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
     A_total = (3*V_beads*diameter_bead)/2
     A_per_tank = A_total/n
 
+
+    
     params = { # Stores the relevant thermodynamic constants as a dictionary 
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
@@ -66,6 +68,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Area_bead_per_tank": A_per_tank, # Area of beads per "tank"
         "U" : 1.2122e-4#0.12122 # Oliver calc
     }
+
     # print(params['C_in_AAH']*params['C_in_water'])
     xini_temp = [cw_pure,0,0,T+273.15, T+273.15] # Initial Conditions 
     xini = np.zeros(5*n)
@@ -118,7 +121,7 @@ def der_func(t,C, parameters, n=6):
 
     total_flow = flow[0]+flow[1]
     
-    
+ 
 
     #Differential equations
     for i in range(5*n):
@@ -198,7 +201,7 @@ def data_extract(data, x, offset=0):
 
 
 if __name__ == '__main__':
-    my_data = np.genfromtxt('Data\PFR\\25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+    my_data = np.genfromtxt('Data\Data from trade\PFR\last_step.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
     # Extracting all temperature data
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
