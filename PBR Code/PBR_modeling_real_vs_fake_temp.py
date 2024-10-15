@@ -196,59 +196,49 @@ def data_extract(data, x, offset=0):
 
 
 if __name__ == '__main__':
-
-    for file in data:
-        my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
-
-    # Extracting all temperature data
-    t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
+    data_files = ['18.09.25.C_again', '18.09.40C_again', '25.09.30C']
     results = {}
 
-    for t_value in t_values:
-        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
-        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
+    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
 
-    # Get AAH Flowrate and Water Flowrate
-    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
-    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
+    for file in data_files:
+        # Load the data from CSV
+        my_data = np.genfromtxt(f'Data/PFR/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+        
+        # Extract temperature data for each sensor
+        file_results = {}
+        for t_value in t_values:
+            elap_time, temp_c = data_extract(my_data, t_value)
+            file_results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c}
+        
+        results[file] = file_results
 
-    # Find initial temperature and flowrates
-    initial_temperature = np.min(temp_c)
-    aah_flowrate_c = np.median(aah_flowrate_c_vector)
-    water_flowrate_c = np.median(water_flowrate_c_vector)
-    
-    n_tanks=16
-
-    # Run PBR model simulation
+    # Simulate the model with PBR
+    n_tanks = 16
+    water_flowrate_c = 100  # Example value
+    aah_flowrate_c = 50  # Example value
     sol_me = PBR_model(20, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
     # Create subplots for each reactor stage
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
+    fig, ax = plt.subplots(3, 4, figsize=(20, 12), sharex=True, sharey=True)
     ax = ax.flatten()
 
-    retention_time = 2 + 2/60 #minutes
-
+    # Plot data for each file
     for i in range(0, 8):
-        # Extract experimental temperature data
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-        tank = math.ceil((i*n_tanks)/(8))
+        for file in data_files:
+            temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
+            elapsed_time = results[file][t_values[-(i+1)]]['elapsed_time']
+            ax[i].plot(elapsed_time, temp_data, label=f'{file} Real Temp')
+        
+        tank = math.ceil((i * n_tanks) / (8))
+        ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, label="Model Temp", color='red')
 
-
-        # # Plotting the initial temperature of the model vs the initial real temperature
-        ax[i].scatter(temp_data[0] , sol_me.y[3 + tank*5, 0] - 273.15+10, color='red')
-
-        # Set plot title, labels, and grid
-        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
-        ax[i].set_xlabel('Predicted Temperature in (°C)')
-        ax[i].set_ylabel('Real Temperature (°C)')
-        ax[i].set_xlim(18, 38)
+        ax[i].set_title(f'Temperature Probe {i + 1}')
+        ax[i].set_xlim(0, 60)
+        ax[i].set_ylim(20, 40)
         ax[i].grid(True)
-        # ax[i].legend()
+        ax[i].legend()
 
-    # Set global title and adjust layout
-    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16)
+    fig.suptitle('Temperature Data from 3 CSV Files', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
-
