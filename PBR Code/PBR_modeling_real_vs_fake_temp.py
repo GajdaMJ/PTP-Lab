@@ -195,14 +195,14 @@ def data_extract(data, x, offset=0):
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
 if __name__ == '__main__':
-    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C','25.09.22C','25.09.30C','25.09.33C','PFR_30-35_100_1-20']
+    data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C','25.09.22C(att.55.conductivityweird)','25.09.30C','25.09.33C','PFR_30-35_100_10-20']
     results = {}
 
     t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T400_PV']
 
     # Load and extract temperature data from CSV files
     for file in data_files:
-        my_data = np.genfromtxt(f'Data/PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+        my_data = np.genfromtxt(f'PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
         # Extract temperature data for each sensor
         file_results = {}
