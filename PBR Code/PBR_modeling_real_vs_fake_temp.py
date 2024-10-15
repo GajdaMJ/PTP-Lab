@@ -238,10 +238,10 @@ if __name__ == '__main__':
             initial_model_temp = sol_me.y[3 + tank * 5, 0] - 273.15  # Convert from K to °C
 
             # Plot the comparison
-            ax[i].scatter(
+            ax[i].plot(
                 initial_real_temp,  # x: initial actual temperature
                 initial_model_temp,  # y: initial model temperature
-                label=f'{file}', color='red'
+                '-o',label=f'{file}', color='red'
             )
         
         ax[i].set_title(f'Probe {i + 1}')
