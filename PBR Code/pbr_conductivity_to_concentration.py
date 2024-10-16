@@ -193,67 +193,72 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
-def conductivity_extract(data, x="T200_PV", offset=0):
-    '''Function to extract data from csv files\n
-    data = data path for your csv file. Give as a string \n
-    x = Name of the instrument that you want. Default set to T200_PV (CSTR internal temperature) \n
-    offset = linear offset for values. Default set to zero \n
-    returns elapsed time and values for your
-    '''
-    # Extract the flow data to determine the starting time
-    flow_rows = data[data['TagName'] == "P120_Flow"]
-    valid_flow_rows = [row for row in flow_rows if row['vValue'] not in ['(null)', None]]
-    flow_values = [float(row['vValue']) for row in valid_flow_rows]
-    flow_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_flow_rows]
-    start_time = None
-    for i in range(1, len(flow_values)):
-        if flow_values[i-1] < 1 and flow_values[i] > 1:     # Loop that checks when the AAH pump is turned on and sets that as the start time
-            start_time = flow_dates[i]
-            break # Stop the loop once flow starts
 
-    temp_rows = data[data['TagName'] == x]  # Only choose the rows for that particular instrument 
-    valid_temp_rows = [row for row in temp_rows if row['vValue'] not in ['(null)', None]] # You want to remove the values when theres null otherwise it does weird things
-    
-    temp_dates = [datetime.strptime(row['DateTime'].split('.')[0], '%Y-%m-%d %H:%M:%S') for row in valid_temp_rows] #Converts the weird csv time format to python
-    temp_values = [float(row['vValue']) + offset for row in valid_temp_rows]
-
-    # Calculate elapsed time in minutes from the start_time
-    elapsed_time = [(dt - start_time).total_seconds() / 60 for dt in temp_dates]
-
-    return elapsed_time, temp_values
-
-def data_extract_conductivity(data_path):
-    '''Extracts the initial conditions for a the reaction \n
-    Data_Path = relative path to the csv document'''
-    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
-
-    #Get temperature
-    elapsed_time, temp = conductivity_extract(data_numpy, 'QT210_PV') 
-
-    #Get AAH Flowrate
-    elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
-
-    #Get Water Flowrate
-    elapsed_time_water, water_flowrate_vector = temp_extract(data_numpy, x='P100_Flow')
-
-    initial_temperature = np.min(temp) # Minimum temp = ini temp
-    aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
-    water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
-    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
-
-
-#changing the conductivity to concentration and then plotting concentration over time
+# #original
 if __name__ == '__main__':
-    n_tanks = 16
-    data_22c = data_extract_conductivity('PFR_2/PFR_all/18.09.40C_again.csv')
-    sol_me = PBR_model(data_22c[2], data_22c[4], data_22c[3], V=131, tspan=[0, 3600], n=n_tanks)
+    my_data = np.genfromtxt('PFR_2/PFR_all/18.09.40C_again.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+
+    # Extracting all temperature data
+    t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV', 'QT210_PV']
+    results = {}
+
+    for t_value in t_values:
+        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
+        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
+
+    # Get AAH Flowrate and Water Flowrate
+    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
+    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
+
+    # Find initial temperature and flowrates
+    initial_temperature = np.min(temp_c)
+    aah_flowrate_c = np.median(aah_flowrate_c_vector)
+    water_flowrate_c = np.median(water_flowrate_c_vector)
+    
+    n_tanks=16
+
+    # Run PBR model simulation
+    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
 
-    # plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
-    plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
-    plt.legend()
-    plt.title('Temperature')
+    #real data conductivity
+    conductivity = np.array(results[t_value[-1]]['temperature'])
+    concentration = []
+    for i in conductivity:
+        concentration.append(0.0000001107*np.exp(0.01436*i + 0.19221))
+
+
+    retention_time = 2 + 2 / 60  # minutes
+
+    # for i in range(0, 8):
+    #     # Extract experimental temperature data
+    #     temp_data = np.array(results[t_values[-(i + 2)]]['temperature']) # +2 because there is conductivity and some other measurement thing in t_values
+    #     elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
+    #     if i == 0:
+    #         tank = 1
+    #     else:
+    #         tank = math.ceil((i * n_tanks) / (8))
+    elapsed_time = results[t_values[-1]]['elapsed_time']
+
+        # Plot real temperature data
+    plt.plot(elapsed_time, concentration, color='#ff7f0e', label='Real Data', linewidth=2)
+
+        # Plot model temperature data for the corresponding stage
+        # ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color='#1f77b4', label='Model Prediction', linewidth=2)
+
+        # Set plot title, labels, and grid
+    # plt.set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
+    plt.set_xlabel('Elapsed Time (min)', fontsize=12)
+    plt.set_ylabel('Temperature (°C)', fontsize=12)
+    plt.set_xlim(0, 20)
+    plt.minorticks_on()
+    plt.grid(which='major', linewidth=2)
+    plt.grid(which='minor', linewidth=0.3)
+    plt.legend(fontsize=10)
+
+    # Set global title and adjust layout
+    # fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+
+
