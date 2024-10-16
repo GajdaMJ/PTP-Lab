@@ -48,10 +48,10 @@ cal_conc_fit = model_func(cal_cond_fit, a, b,d)
 plt.scatter(cal_cond, cal_conc, color='red', label='Data Points')
 plt.plot(cal_cond_fit, cal_conc_fit, label=f'Fit: {a:.5f} * exp({b:.5f} * x)', color='blue')
 
-plt.xlabel('Conductivity')
-plt.ylabel('Concentration')
+plt.xlabel('Conductivity [us/cm]')
+plt.ylabel('Concentration [mol/L]')
 plt.legend()
-plt.title('Exponential Fit of Conductivity vs. Concentration')
+plt.title('CSTR Calibration Curve')
 plt.show()
 
 print(f"Fitted equation: y = {a:.5f} * exp({b:.5f}*x + {d:.5f})")
@@ -77,7 +77,7 @@ mm_AAH = 102.089 # (g/mol)
 rho_AAH = 1082 # (g/L)
 caah_pure = rho_AAH/mm_AAH # (mol/L)
 
-v = 593.66 #L
+v = 593.66 #ml
 v_w = 1.745/60 #L/s
 v_aah = 14/60 #L/s
 v_f = v_w + v_aah #L/s
@@ -106,16 +106,30 @@ popt1, pcov1 = curve_fit(lin_func, rep_temp, ln_k, p0=(1, 0))
 a1, b1 = popt1
 
 # Generate data for plotting the fitted curve
-rep_temp_fit = np.linspace(min(rep_temp), max(rep_temp), 100)
+rep_temp_fit = np.linspace(0, max(rep_temp), 100)
 ln_k_fit = lin_func(rep_temp_fit, a1, b1)
 
-# plt.scatter(rep_temp, ln_k, color='red', label='Data Points')
-plt.plot(rep_temp_fit,ln_k_fit)
+#plt.scatter(rep_temp, ln_k, color='red', label='Data Points')
+plt.plot(rep_temp_fit,ln_k_fit,label=f'Fit: {a1:.5f} * x +({b1:.5f})')
 plt.xlabel('1/T [1/K]')
 plt.ylabel('ln(k)')
+plt.title("Fitted Linear Regression of 1/T vs ln(k)")
 plt.xlim(0,np.max(rep_temp))
+plt.legend()
 plt.show()
 
 print(f"Fitted equation: y = {a1:.5f} * x + ({b1:.5f})")
 print(f"k0 = {np.exp(lin_func(0,a1,b1)):.5f}")
 print(f"Ea = {(a1*-8.3145)}")
+
+rep_temp_fit_1 = np.linspace(min(rep_temp), max(rep_temp), 100)
+ln_k_fit_1 = lin_func(rep_temp_fit_1, a1, b1)
+
+plt.scatter(rep_temp, ln_k, color='red', label='Data Points')
+plt.plot(rep_temp_fit_1, ln_k_fit_1, label=f'Fit: {a1:.5f} * x +({b1:.5f})', color='blue')
+plt.xlabel('1/T [1/K]')
+plt.ylabel('ln(k)')
+plt.title("Plot to determine k0 and Ea")
+plt.legend()
+plt.show()
+
