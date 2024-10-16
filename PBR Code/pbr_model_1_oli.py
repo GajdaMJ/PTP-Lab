@@ -273,17 +273,17 @@ if __name__ == '__main__':
             # Print the equation of the line
             print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
 
-        ax[i].set_title(f'Temperature Probe {i + 1}')
-        ax[i].set_xlabel('Probe Temp (°C)')
-        ax[i].set_ylabel('Water Bath Temp (°C)')
+        ax[i].set_title(f'Temperature Probe {i + 1}',fontsize = 14, fontweight = 'bold')
+        ax[i].set_xlabel('Probe Temp (°C)',fontsize = 12)
+        ax[i].set_ylabel('Water Bath Temp (°C)', fontsize = 12)
         ax[i].set_xlim(20, 45) 
         ax[i].set_ylim(20, 45)  
         ax[i].minorticks_on()
         ax[i].grid(which='major', linewidth=2)
         ax[i].grid(which='minor', linewidth=0.5)
-        ax[i].legend()
+        ax[i].legend(fontsize = 10)
 
-    fig.suptitle('Initial Temperature: Probe vs Water Bath', fontsize=16)
+    fig.suptitle('Initial Temperature: Probe vs Water Bath', fontsize=16,fontweight= 'bold')
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
 
@@ -341,9 +341,11 @@ if __name__ == '__main__':
         # Set plot title, labels, and grid
         ax[i].set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
         ax[i].set_xlabel('Elapsed Time (min)', fontsize=12)
-        ax[i].set_ylabel('Change in Temperature (°C)', fontsize=12)
+        ax[i].set_ylabel('Temperature (°C)', fontsize=12)
         ax[i].set_xlim(0, 20)
-        ax[i].grid(True)
+        ax[i].minorticks_on()
+        ax[i].grid(which='major', linewidth=2)
+        ax[i].grid(which='minor', linewidth=0.3)
         ax[i].legend(fontsize=10)
 
     # Set global title and adjust layout
