@@ -403,16 +403,15 @@ if __name__ == '__main__':
         plt.plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15,linestyle = 'dashed', color= colors[i], label='Model Prediction', linewidth=2)
 
         # Set plot title, labels, and grid
-        plt.set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
-        plt.set_xlabel('Elapsed Time (min)', fontsize=12)
-        plt.set_ylabel('Temperature (°C)', fontsize=12)
-        plt.set_xlim(0, 20)
-        plt.minorticks_on()
-        plt.grid(which='major', linewidth=2)
-        plt.grid(which='minor', linewidth=0.3)
+        plt.title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
+        plt.xlabel('Elapsed Time (min)', fontsize=12)
+        plt.ylabel('Temperature (°C)', fontsize=12)
+        plt.xlim(0, 20)
         plt.legend(fontsize=10)
 
     # Set global title and adjust layout
-    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
+    plt.minorticks_on()
+    plt.grid(which = 'major')
+    plt.grid(which = 'minor', linewidth = 0.1)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
