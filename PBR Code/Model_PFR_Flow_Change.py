@@ -237,42 +237,54 @@ if __name__ == '__main__':
     aah_flowrate_2 = aah_flowrate_c_vector[-8]
     
     # Run PBR model simulation
-    sol_time, sol_y = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_1, aah_flowrate_2, V=131, tspan=[0, 3600], t_change=9*60, n=n_tanks)
+    sol_time, sol_y = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_1, aah_flowrate_2, V=131, tspan=[0, 3600], t_change=12*60, n=n_tanks)
 
     # Create subplots for each reactor stage
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
+    # Improved plotting
+    fig, ax = plt.subplots(2, 4, figsize=(22, 10), sharex=True, sharey=True)
     ax = ax.flatten()
 
-    retention_time = 2 + 2/60 #minutes
+    # Colors for the plot
+    real_data_color = '#FF5733'  # Color for real data
+    model_data_color = '#1f77b4'  # Color for model data
 
-   # Create subplots for each reactor stage
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
-    ax = ax.flatten()
+    # Marker styles for real and model data
+    real_data_marker = 'o'
+    model_data_marker = '--'
 
-    retention_time = 2 + 2/60 #minutes
-
+    # Font size adjustments
+    title_fontsize = 14
+    label_fontsize = 12
+    legend_fontsize = 12
 
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
         elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-        tank = math.ceil((i*n_tanks)/(8))
+        tank = math.ceil((i * n_tanks) / (8))+1
 
-        # Plot real temperature data
-        ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
+        # Plot real temperature data with markers and line
+        ax[i].plot(elapsed_time, temp_data - temp_data[0], color=real_data_color, label='Real Data', 
+                marker=real_data_marker, markersize=4, linestyle='-', linewidth=2)
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_time / 60 , sol_y[3 + tank*5, :] - 273.15 - initial_temperature, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_time / 60, sol_y[3 + tank * 5, :] - 273.15 - initial_temperature, color=model_data_color, 
+                label='Model Prediction', linestyle=model_data_marker, linewidth=2)
 
         # Set plot title, labels, and grid
-        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
-        ax[i].set_xlabel('Elapsed Time (min)')
-        ax[i].set_ylabel('Change in Temperature (°C)')
-        ax[i].set_xlim(0, 30)
-        ax[i].grid(True)
-        ax[i].legend()
+        ax[i].set_title(f'Temperature probe {i + 1}, Reactor {tank + 1}', fontsize=title_fontsize)
+        ax[i].set_xlabel('Elapsed Time (min)', fontsize=label_fontsize)
+        ax[i].set_ylabel('Change in Temperature (°C)', fontsize=label_fontsize)
+        
+        # Add grid and limits
+        ax[i].grid(True, linestyle='--', alpha=0.7)
+        ax[i].set_xlim(0, 25)
+        ax[i].set_ylim(0,4)
+        # Add legend with increased font size
+        ax[i].legend(fontsize=legend_fontsize)
 
     # Set global title and adjust layout
-    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16)
+    fig.suptitle('Reactor Temperature Data vs. Model Prediction', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+
     plt.show()

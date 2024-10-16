@@ -225,7 +225,7 @@ def least_squares_error(sol_me, results, t_values, n_tanks, initial_temperature)
 
 # Now we add least squares comparison to your main code
 if __name__ == '__main__':
-    my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+    my_data = np.genfromtxt('Data\PFR\\25.09.33C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
     # Extracting all temperature data
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']

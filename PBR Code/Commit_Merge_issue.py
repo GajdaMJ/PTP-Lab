@@ -232,7 +232,7 @@ if __name__ == '__main__':
         if i == 0:
             tank = 1
         else:
-            tank = math.ceil((i * n_tanks) / (8))
+            tank = math.ceil((i * n_tanks) / (8))+1
 
         # Plot real temperature data
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data', linewidth=2)

@@ -67,7 +67,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Area_bead_per_tank": A_per_tank, # Area of beads per "tank"
         "U" : 1.2122e-4#0.12122 # Oliver calc
     }
-    print(params['C_in_AAH'])
+
     # print(params['C_in_AAH']*params['C_in_water'])
     xini_temp = [cw_pure,0,0,T+273.15, T+273.15] # Initial Conditions 
     xini = np.zeros(5*n)
@@ -251,7 +251,7 @@ if __name__ == '__main__':
         ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
         ax[i].set_xlabel('Elapsed Time (min)')
         ax[i].set_ylabel('Change in Temperature (°C)')
-        ax[i].set_xlim(0, 15)
+        ax[i].set_xlim(0, 30)
         ax[i].grid(True)
         ax[i].legend()
 
