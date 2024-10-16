@@ -191,7 +191,7 @@ if __name__ == '__main__':
     water_flowrate_c = np.median(water_flowrate_c_vector)
 
     # Run PBR model simulation
-    sol_me = PBR_model(20, 100, 20, V=137, tspan=[0, 3600], n=9)
+    sol_me = PBR_model(initial_temperature, 100, 20, V=137, tspan=[0, 3600], n=9)
 
     # Create subplots for each reactor stage
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
@@ -203,10 +203,10 @@ if __name__ == '__main__':
         elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
 
         # Plot real temperature data
-        ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data')
+        ax[i].plot(elapsed_time, temp_data , color='#ff7f0e', label='Real Data')
 
         # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60, sol_me.y[3 + i*4, :] - 273.15 - 20, color='#1f77b4', label='Model Prediction')
+        ax[i].plot(sol_me.t / 60, sol_me.y[3 + i*4, :]-273.15, color='#1f77b4', label='Model Prediction')
 
         # Set plot title, labels, and grid
         ax[i].set_title(f'Reactor {i + 1} Data')

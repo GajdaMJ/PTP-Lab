@@ -25,19 +25,16 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
 
     #Chemical constants
-
     #Water
     mm_water = 18.01528 # (g/mol)
     rho_water = 0.999842 # (g/ml)
     cw_pure = rho_water/mm_water # (mol/ml)
-
     #Acetic acid
     mm_AAH = 102.089 # (g/mol)
     rho_AAH = 1.082 # (g/ml)
     caah_pure = rho_AAH/mm_AAH # (mol/ml)
 
     flow_array = [fv_w_dm3_s, fv_a_dm3_s]
-
     
     params = { # Stores the relevant thermodynamic constants as a dictionary 
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),

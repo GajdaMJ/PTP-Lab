@@ -6,7 +6,8 @@ import scipy.integrate
 # Assume isothermal (no exotherm)
 # Assume constant density
 
-def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
+
+def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -28,19 +29,17 @@ def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
     mm_water = 18.01528 # (g/mol)
     rho_water = 0.999842 # (g/ml)
     cw_pure = rho_water/mm_water # (mol/ml)
-
     #Acetic acid
     mm_AAH = 102.089 # (g/mol)
     rho_AAH = 1.082 # (g/ml)
     caah_pure = rho_AAH/mm_AAH # (mol/ml)
 
     flow_array = [fv_w_dm3_s, fv_a_dm3_s]
-
     
     params = { # Stores the relevant thermodynamic constants as a dictionary 
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
-        "Inlet temperature": T1+273.15, # Temp but now in kelvin
+        "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
         "k0": 7e6,          # Reaction rate constant (ml/mol/s)
@@ -53,18 +52,9 @@ def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
         "cp": 4.186             # Heat capacity (J/g/K)
     }
     # print(params['C_in_AAH']*params['C_in_water'])
-    xini = [cw_pure,0,0,T1+273.15] # Initial Conditions 
-    sol_1 =  scipy.integrate.solve_ivp(der_func, [tspan[0], t_change], xini, args=(params,)) 
-    
-    #Change over
-    params["Inlet temperature"] = T2+273.15 #Change temp
-    xini = [sol_1.y[0,-1], sol_1.y[1,-1], sol_1.y[2,-1], sol_1.y[3,-1]]   #Take last row as initial conditions for next solution iteration 
-    sol_2 = scipy.integrate.solve_ivp(der_func, [t_change,tspan[1]], xini, args=(params,))
-
-    combined_time = np.concatenate((sol_1.t, sol_2.t))  # Combine time points
-    combined_y = np.concatenate((sol_1.y, sol_2.y), axis=1)  # Combine solution arrays along axis 1 (columns)
-
-    return combined_time, combined_y
+    xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
+    return sol_me
 
 def der_func(t,C, parameters):
     '''This function contains the differential equations to solve the reaction A+B->2C in an adiabatic 
@@ -151,34 +141,46 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\Data from trade\CSTR\experiment14.10.csv')
-
-    sol_time, sol_y = CSTR_model(26.9, 29.99, 185.83, 14.89, V=567)
-
-    plt.figure(figsize=(10, 6))  # Larger figure size for better visibility
-
-    # Plot simulation results (CSTR model)
-    plt.plot(sol_time/60, sol_y[3, :] - 273.15, label='Predicted (Model)', linestyle='--', color='b', linewidth=2)
-
-    # Plot experimental data
-    plt.plot(data_22c[0], data_22c[1], label='Experimental Data', linestyle='-', color='r', linewidth=2)
-
-    # Enhancing the plot aesthetics
-    plt.xlabel('Time [minutes]', fontsize=14, weight='bold')
-    plt.ylabel('Temperature [°C]', fontsize=14, weight='bold')
-    plt.title('CSTR Temperature Profile: Model vs Experimental Data (Step Change)', fontsize=16, weight='bold')
+    # Load the datasets
+    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
+    data_round2 = data_extract('Data\\Data from trade\\CSTR\\experiment14.10.csv')
     
-    # Adding grid for clarity
-    plt.grid(True, which='both', linestyle='--', linewidth=0.7)
+    # Convert to numpy arrays
+    elapsed_time_22c, temp_22c, initial_temperature_22c, aah_flowrate_22c, water_flowrate_22c = data_22c
+    elapsed_time_round2, temp_round2, initial_temperature_round2, aah_flowrate_round2, water_flowrate_round2 = data_round2
 
-    # Adjusting legend for clarity
-    plt.legend(fontsize=12, loc='best')
+    # Select specific slices
+    time_slice_22c = elapsed_time_22c[4:80]  # 4 to 80
+    temp_slice_22c = temp_22c[4:80]
 
-    # Limiting x-axis to the relevant time frame
-    plt.xlim(0, 55)
+    time_slice_round2 = elapsed_time_round2[12:49]  # 12 to 49
+    temp_slice_round2 = temp_round2[12:49]
 
-    # Applying tight layout for better spacing of elements
-    plt.tight_layout()
+    # Create an array of times and temperatures
+    # Since the time ranges may not match, we will align the datasets
+    common_time = np.union1d(time_slice_22c, time_slice_round2)  # Get all unique time points
 
-    # Displaying the plot
+    # Interpolate temperature values for the common time points
+    temp_interpolated_22c = np.interp(common_time, time_slice_22c, temp_slice_22c)
+    temp_interpolated_round2 = np.interp(common_time, time_slice_round2, temp_slice_round2)
+
+    # Calculate average temperature and standard deviation
+    avg_temp = (temp_interpolated_22c + temp_interpolated_round2) / 2
+    std_temp = np.std([temp_interpolated_22c, temp_interpolated_round2], axis=0)
+
+    # Plot the results with error bars
+    plt.figure(figsize=(10, 6))
+    plt.errorbar(common_time, avg_temp, yerr=std_temp, fmt='-o', label='Average Temperature', color='blue', 
+                 capsize=5, elinewidth=1, markerfacecolor='red', markeredgecolor='black')
+    
+    plt.xlabel('Time (minutes)')
+    plt.ylabel('Temperature (°C)')
+    plt.title('Average Temperature with Standard Deviation Error Bars')
+    plt.legend()
+    plt.grid()
+    plt.xlim(0, 30)
     plt.show()
+
+    # Print out average and standard deviation for the slices
+    print("Average Temperature:", avg_temp)
+    print("Standard Deviation:", std_temp)
