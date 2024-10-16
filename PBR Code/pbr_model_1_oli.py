@@ -384,10 +384,6 @@ if __name__ == '__main__':
     # Run PBR model simulation
     sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
-    # Create subplots for each reactor stage
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
-    ax = ax.flatten()
-
     retention_time = 2 + 2 / 60  # minutes
     colors = ['orange', 'blue', 'green', 'black', 'red', 'indigo', 'lavender', 'lightpink']
 
@@ -401,20 +397,20 @@ if __name__ == '__main__':
             tank = math.ceil((i * n_tanks) / (8))
 
         # Plot real temperature data
-        ax[1].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color= colors[i], label='Real Data', linewidth=2)
+        plt.plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color= colors[i], label='Real Data', linewidth=2)
 
         # Plot model temperature data for the corresponding stage
-        ax[1].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color= colors[i], label='Model Prediction', linewidth=2)
+        plt.plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15,linestyle = 'dashed', color= colors[i], label='Model Prediction', linewidth=2)
 
         # Set plot title, labels, and grid
-        ax[1].set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
-        ax[1].set_xlabel('Elapsed Time (min)', fontsize=12)
-        ax[1].set_ylabel('Temperature (°C)', fontsize=12)
-        ax[1].set_xlim(0, 20)
-        ax[1].minorticks_on()
-        ax[1].grid(which='major', linewidth=2)
-        ax[1].grid(which='minor', linewidth=0.3)
-        ax[1].legend(fontsize=10)
+        plt.set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
+        plt.set_xlabel('Elapsed Time (min)', fontsize=12)
+        plt.set_ylabel('Temperature (°C)', fontsize=12)
+        plt.set_xlim(0, 20)
+        plt.minorticks_on()
+        plt.grid(which='major', linewidth=2)
+        plt.grid(which='minor', linewidth=0.3)
+        plt.legend(fontsize=10)
 
     # Set global title and adjust layout
     fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
