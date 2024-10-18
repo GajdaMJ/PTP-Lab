@@ -54,10 +54,10 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 4.4e14, #6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45187.2,             # Activation energy (J/mol)
+        "Ea": 9.825e4,#45187.2,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
@@ -311,7 +311,7 @@ if __name__ == '__main__':
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks=16
+    n_tanks=8
 
     # Run PBR model simulation
     sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
@@ -328,7 +328,7 @@ if __name__ == '__main__':
         temp_data = np.array(results[t_values[-(i + 1)]]['temperature'])
         elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
         if i == 0:
-            tank = 1
+            tank = 0
         else:
             tank = math.ceil((i * n_tanks) / (8))
         
@@ -336,8 +336,8 @@ if __name__ == '__main__':
 
 
         # Plot real temperature data
-        # ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
-        ax[i].plot(elapsed_time, slopes[i]*temp_data + y_intercepts[i], color='#ff7f0e', label='Real Data', linewidth=2)
+        ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
+        # ax[i].plot(elapsed_time, slopes[i]*temp_data + y_intercepts[i], color='#ff7f0e', label='Real Data', linewidth=2)
 
         # Plot model temperature data for the corresponding stage
         ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color='#1f77b4', label='Model Prediction', linewidth=2)
