@@ -150,12 +150,12 @@ if __name__ == '__main__':
     concentration = []
     cond = np.array(data_22c[6])
     for i in range(len(cond)):
-        concentration.append(0.13817 * np.exp(0.00154*cond[i] - 0.18402))
+        concentration.append((0.13817 * np.exp(0.00154*cond[i] - 0.18402))/1000)
 
 
 
-    plt.plot(sol_me.t/60, sol_me.y[2, :]-273.15, label='think')
-    plt.plot(data_22c[5], concentration, label='real')
+    plt.plot(sol_me.t/60, sol_me.y[2, :], label='think')
+    plt.plot(data_22c[5], concentration - concentration[0], label='real')
     plt.xlabel('Time (minutes)', fontsize = 12)
     # plt.xlim(0, np.max(data_22c[1]))
     plt.ylabel('Concentration', fontsize = 12)
