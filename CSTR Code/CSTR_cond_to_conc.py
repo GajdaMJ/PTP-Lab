@@ -123,7 +123,7 @@ def temp_extract(data, x="T200_PV", offset=0):
 def data_extract(data_path):
     '''Extracts the initial conditions for a the reaction \n
     Data_Path = relative path to the csv document'''
-    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
+    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding='ISO-8859-1') #built in numpy function to extract data
 
     #Get temperature
     elapsed_time, temp = temp_extract(data_numpy) 
