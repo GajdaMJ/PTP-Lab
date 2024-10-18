@@ -179,6 +179,9 @@ print(f"Fitted equation2: y = {a3:.5f} * x + ({b3:.5f})")
 print(f"k0 = {np.exp(lin_func(0,a3,b3)):.8f}")
 print(f"Ea = {(a3*-8.3145)}")
 
+print(f'k0 avg = {(np.exp(lin_func(0,a1,b1))+np.exp(lin_func(0,a2,b2))+np.exp(lin_func(0,a3,b3)))/3:.8f}')
+print(f'Ea avg = {((a1*-8.3145)+(a2*-8.3145)+(a3*-8.3145))/3:.8f}')
+
 rep_temp_fit_1 = np.linspace(min(rep_temp), max(rep_temp), 100)
 ln_k_fit_a = lin_func(rep_temp_fit_1, a1, b1)
 ln_k_fit_a1 = lin_func(rep_temp_fit_1, a2, b2)
