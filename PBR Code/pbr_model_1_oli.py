@@ -311,7 +311,7 @@ if __name__ == '__main__':
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks=8
+    n_tanks=9
 
     # Run PBR model simulation
     sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
@@ -328,9 +328,10 @@ if __name__ == '__main__':
         temp_data = np.array(results[t_values[-(i + 1)]]['temperature'])
         elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
         if i == 0:
-            tank = 0
+            tank = 1
         else:
-            tank = math.ceil((i * n_tanks) / (8))
+            tank = math.floor((i * n_tanks) / (8)) +1
+            print(tank)
         
         
 
