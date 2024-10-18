@@ -229,9 +229,9 @@ if __name__ == '__main__':
     sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
     plt.plot(elapsed_time, conc, linewidth = 2, label = 'concentration')
-    plt.title("Concentration")
-    plt.xlabel("Time (min)")
-    plt.ylabel("concentration")
+    plt.title("Concentration", fontsize = 14, fontweight = 'bold')
+    plt.xlabel("Time (min)", fontsize = 12)
+    plt.ylabel("Concentration", fontsize = 12)
     plt.minorticks_on()
     plt.grid(which = 'major', linewidth = 2)
     plt.grid(which='minor', linewidth = 0.3)
