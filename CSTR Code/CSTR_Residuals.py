@@ -7,7 +7,7 @@ import scipy.integrate
 # Assume constant density
 
 
-def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
+def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600], teval = np.linspace(0,35*60,500)):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -42,10 +42,10 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 5198.17647e4,          # Reaction rate constant (ml/mol/s)
+        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 53155.88,             # Activation energy (J/mol)
+        "Ea": 45622.34,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
@@ -53,7 +53,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     }
     # print(params['C_in_AAH']*params['C_in_water'])
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,), t_eval=teval)
     return sol_me
 
 def der_func(t,C, parameters):
@@ -141,16 +141,52 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
+    # Extract data from the CSV file
     data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
+    
+    # Run the CSTR model with initial conditions
     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
-
-    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
+    elapsed_time = np.array(data_22c[0])
+    
+    # Plot modeled and measured temperatures
+    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='Modeled Temperature')
+    plt.plot(data_22c[0], data_22c[1], label='Measured Temperature')
     plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
+    plt.ylabel('Temperature (°C)')
     plt.legend()
-    plt.title('Temperature')
+    plt.title('Temperature vs Time')
     plt.show()
+
+    # Finding indices for the time range
+    index_zero_time = np.argmin(np.abs(elapsed_time - 0.0))
+    index_nearest_20 = np.argmin(np.abs(elapsed_time - 33.7*60))
+    
+    # Run the model again for the residual calculation
+    sol_residual = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567, 
+                              teval=elapsed_time[index_zero_time:index_nearest_20]*60)
+
+    # Extracting relevant ranges for residuals
+    data_time_residuals = data_22c[0][index_zero_time:index_nearest_20]
+    data_temp_residuals = data_22c[1][index_zero_time:index_nearest_20]
+
+    # Model predictions for the same time range
+    prediction_temp = sol_residual.y[3, :] - 273.15  # convert to °C
+
+    # Calculate residuals
+    residuals = data_temp_residuals - prediction_temp
+    
+    # Calculate R^2 value
+    ss_res = np.sum(residuals ** 2)  # sum of squares of residuals
+    ss_tot = np.sum((data_temp_residuals - np.mean(data_temp_residuals)) ** 2)  # total sum of squares
+    r_squared = 1 - (ss_res / ss_tot)  # R^2 calculation
+
+    print(f'R^2 value: {r_squared}')
+
+    # Plot residuals
+    plt.plot(data_time_residuals, residuals, label='Residuals')
+    plt.xlabel('Time (minutes)')
+    plt.ylabel('Temperature Residuals (°C)')
+    plt.title('Temperature Residuals vs Time')
+    plt.legend()
+    plt.show()
+    

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import scipy.integrate
 import math
+from sklearn.metrics import r2_score 
 # Assume reaction is 1st order wrt both components
 # Assume isothermal (no exotherm)
 # Assume constant density
@@ -263,7 +264,7 @@ if __name__ == '__main__':
     sol_me2 = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks, t_eval=elapsed_time_residuals*60)
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
-
+    r2_list =[]
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i + 1)]]['temperature'][index_zero_time:index_nearest_20])
@@ -275,7 +276,9 @@ if __name__ == '__main__':
 
         # Plot real temperature data
         ax[i].plot(elapsed_time_residuals, (temp_data - temp_data[0])- (sol_me2.y[3 + tank * 5, :] - 273.15 - initial_temperature),'.', color='#ff7f0e', label='Praying', linewidth=2)
+        R_square = r2_score((temp_data - temp_data[0]), (sol_me2.y[3 + tank * 5, :] - 273.15 - initial_temperature))
 
+        r2_list.append(R_square)
         # Plot model temperature data for the corresponding stage
         # ax[i].plot(sol_me2.t / 60, sol_me2.y[3 + tank * 5, :] - 273.15 - initial_temperature, color='#1f77b4', label='Model Prediction', linewidth=2)
 
@@ -291,3 +294,10 @@ if __name__ == '__main__':
     fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+    
+     
+    # corr_matrix = np.corrcoef((temp_data - temp_data[0]), (sol_me2.y[3 + tank * 5, :] - 273.15 - initial_temperature))
+    # corr = corr_matrix[0,1]
+    # R_sq = corr**2
+    
+    print(r2_list)

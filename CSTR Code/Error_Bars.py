@@ -168,10 +168,8 @@ if __name__ == '__main__':
     avg_temp = (temp_interpolated_22c + temp_interpolated_round2) / 2
     std_temp = np.std([temp_interpolated_22c, temp_interpolated_round2], axis=0)
 
-    # Plot the results with error bars
     plt.figure(figsize=(10, 6))
-    plt.errorbar(common_time, avg_temp, yerr=std_temp, fmt='-o', label='Average Temperature', color='blue', 
-                 capsize=5, elinewidth=1, markerfacecolor='red', markeredgecolor='black')
+    plt.errorbar(common_time, avg_temp, yerr=std_temp, fmt='-o', label='Average Temperature', color='blue', capsize=5, elinewidth=1, markerfacecolor='red', markeredgecolor='black')
     
     plt.xlabel('Time (minutes)')
     plt.ylabel('Temperature (°C)')
@@ -181,6 +179,5 @@ if __name__ == '__main__':
     plt.xlim(0, 30)
     plt.show()
 
-    # Print out average and standard deviation for the slices
     print("Average Temperature:", avg_temp)
     print("Standard Deviation:", std_temp)
