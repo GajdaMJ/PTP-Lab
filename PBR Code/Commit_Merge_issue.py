@@ -54,10 +54,10 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 4.3e14, #437418593618788.81250000, #6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45187.2,             # Activation energy (J/mol)
+        "Ea": 9.85e4,#97673.47083209756, #45187.2,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
