@@ -33,8 +33,11 @@ cond_27 = np.mean(conductivity[43:49])
 conductivity = [cond_27,cond_30,cond_35]
 
 ######## Creating calibration curve for concentration conversion ########
+o=1
 cal_cond = [1695,1636,1594,1530,1429,1274,963,690,523] #conductivity measures
-cal_conc = [1.74, 1.566, 1.392, 1.218, 1.044,0.87,0.435,0.2175,0.10875] # known acetic acid concentration [mol/L]
+#cal_cond = [1695,1636,1586,1531,1419,1139,963,682,506] ##best?
+# cal_cond = [1695,1636,1586,1534,1429,1274,966,690,506] 
+cal_conc = [1.74*o, 1.566*o, 1.392*o, 1.218*o, 1.044*o,0.87*o,0.435*o,0.2175*o,0.10875*o] # known acetic acid concentration [mol/L]
 
 def model_func(x, a, b,d):
     return a * np.exp(b * x) + d
@@ -46,7 +49,7 @@ cal_cond_fit = np.linspace(min(cal_cond), max(cal_cond), 100)
 cal_conc_fit = model_func(cal_cond_fit, a, b,d)
 
 plt.scatter(cal_cond, cal_conc, color='red', label='Data Points')
-plt.plot(cal_cond_fit, cal_conc_fit, label=f'Fit: {a:.5f} * exp({b:.5f} * x)', color='blue')
+plt.plot(cal_cond_fit, cal_conc_fit, label=f'Fit: {a:.5f} * exp({b:.5f} * x) + {d:.5f}', color='blue')
 
 plt.xlabel('Conductivity [us/cm]')
 plt.ylabel('Concentration [mol/L]')
@@ -54,36 +57,37 @@ plt.legend()
 plt.title('CSTR Calibration Curve')
 plt.show()
 
-print(f"Fitted equation: y = {a:.5f} * exp({b:.5f}*x + {d:.5f})")
+print(f"Fitted equation: y = {a:.5f} * exp({b:.5f}*x) + {d:.5f}")
 
 
 ######### Converting experimental conductivity into concentration #########
-conc_27 = model_func(cond_27, a, b,d)
-conc_30 = model_func(cond_30, a, b,d)
-conc_35 = model_func(cond_35, a, b,d)
+conc_27 = model_func(cond_27, a, b,d) # mol/L 
+conc_30 = model_func(cond_30, a, b,d) # mol/L
+conc_35 = model_func(cond_35, a, b,d) # mol/L
 
-concentrations = [conc_27,conc_30,conc_35] #mol/L
-
+concentrations = [conc_27*1e-3,conc_30*1e-3,conc_35*1e-3] #mol/ml
+print(f'concentrations = {(concentrations)}')
 
 # ##### Inshallah Concentration ####
 
 #water
 mm_water = 18.01528 # (g/mol)
-rho_water = 999.842 # (g/L)
-cw_pure = rho_water/mm_water # (mol/L)
+rho_water = .999842 # (g/mL)
+cw_pure = rho_water/mm_water # (mol/mL)
 
 #Acetic acid
 mm_AAH = 102.089 # (g/mol)
-rho_AAH = 1082 # (g/L)
-caah_pure = rho_AAH/mm_AAH # (mol/L)
+rho_AAH = 1.082 # (g/mL)
+caah_pure = rho_AAH/mm_AAH # (mol/mL)
 
-v = 593.66 #ml
-v_w = 1.745/60 #L/s
-v_aah = 14/60 #L/s
-v_f = v_w + v_aah #L/s
-c_w0 = cw_pure * v_w/v_f #mol/L
-c_aah0 = caah_pure *v_aah/v_f #mol/L
+v = 593.66 #mL
+v_w = 174.5/60 #mL/s
+v_aah = 14/60 #mL/s 
+v_f = v_w + v_aah #mL/s
+c_w0 = cw_pure * v_w/v_f #mol/mL
+c_aah0 = caah_pure *v_aah/v_f #mol/mL
 
+print(c_w0,c_aah0)
 def k_eq(c_aa):
     return 2*c_aa *v_f /(v*(2*c_w0-c_aa)*(2*c_aah0-c_aa))   
 
@@ -92,10 +96,12 @@ k_val = []
 for i in range(0,3):
     k_val.append(k_eq(concentrations[i]))
 
-
-rep_temp = [1/(27+273.15),1/(30+273.15),1/(35+273.15)]
+print(f'kval = {(k_val)}')
+rep_temp = [1/(27+273),1/(30+273),1/(35+273)]
 
 ln_k = np.log(k_val)
+
+print(f'lnk = {(ln_k)}')
 
 def lin_func(x, a, b):
     return a * x + b
@@ -119,7 +125,7 @@ plt.legend()
 plt.show()
 
 print(f"Fitted equation: y = {a1:.5f} * x + ({b1:.5f})")
-print(f"k0 = {np.exp(lin_func(0,a1,b1)):.5f}")
+print(f"k0 = {np.exp(lin_func(0,a1,b1)):.8f}")
 print(f"Ea = {(a1*-8.3145)}")
 
 rep_temp_fit_1 = np.linspace(min(rep_temp), max(rep_temp), 100)
