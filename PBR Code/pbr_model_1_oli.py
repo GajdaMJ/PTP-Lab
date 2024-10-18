@@ -336,8 +336,8 @@ if __name__ == '__main__':
 
 
         # Plot real temperature data
-        ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
-        # ax[i].plot(elapsed_time, slopes[i]*temp_data + y_intercepts[i], color='#ff7f0e', label='Real Data', linewidth=2)
+        # ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
+        ax[i].plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
 
         # Plot model temperature data for the corresponding stage
         ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color='#1f77b4', label='Model Prediction', linewidth=2)
