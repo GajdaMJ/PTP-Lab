@@ -83,7 +83,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         elif np.mod(i, 5)==4:
             xini[i] = xini_temp[4]
 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, t_eval=np.linspace(tspan[0], tspan[1], 400), args=(params, n)) 
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, t_eval=np.linspace(tspan[0], tspan[1], 500), args=(params, n)) 
     return sol_me
 
 def der_func(t,C, parameters, n=6):
