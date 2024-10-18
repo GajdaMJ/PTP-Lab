@@ -128,6 +128,9 @@ def data_extract(data_path):
     #Get temperature
     elapsed_time, temp = temp_extract(data_numpy) 
 
+    #getting conduction
+    elapsed_time_cond, conductivity = temp_extract(data_numpy,"Q210_PV")
+
     #Get AAH Flowrate
     elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
 
@@ -137,20 +140,28 @@ def data_extract(data_path):
     initial_temperature = np.min(temp) # Minimum temp = ini temp
     aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
     water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
-    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
+    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate, elapsed_time_cond,conductivity
 
 
 if __name__ == '__main__':
     data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
 
-    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
-    plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
-    plt.legend()
-    plt.title('Temperature')
+    concentration = []
+    cond = np.array(data_22c[6])
+    for i in range(len(cond)):
+        concentration.append(0.13817 * np.exp(0.00154*cond[i] - 0.18402))
+
+
+
+    plt.plot(sol_me.t/60, sol_me.y[2, :]-273.15, label='think')
+    plt.plot(data_22c[5], concentration, label='real')
+    plt.xlabel('Time (minutes)', fontsize = 12)
+    # plt.xlim(0, np.max(data_22c[1]))
+    plt.ylabel('Concentration', fontsize = 12)
+    plt.legend(fontsize = 10)
+    plt.title('Concentration', fontsize = 14, fontweight = "bold")
+    plt.minorticks_on()
+    plt.grid(which='major',linewidth=2)
+    plt.grid(which='minor',linewidth=0.3)
     plt.show()
