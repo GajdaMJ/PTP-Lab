@@ -301,6 +301,7 @@ if __name__ == '__main__':
         elap_time, temp_c, offset_time = data_extract(my_data, t_value)
         results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
 
+
     # Get AAH Flowrate and Water Flowrate
     elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
     elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
@@ -330,10 +331,13 @@ if __name__ == '__main__':
             tank = 1
         else:
             tank = math.ceil((i * n_tanks) / (8))
+        
+        
 
 
         # Plot real temperature data
-        ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
+        # ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
+        ax[i].plot(elapsed_time, slopes[i]*temp_data + y_intercepts[i], color='#ff7f0e', label='Real Data', linewidth=2)
 
         # Plot model temperature data for the corresponding stage
         ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color='#1f77b4', label='Model Prediction', linewidth=2)
