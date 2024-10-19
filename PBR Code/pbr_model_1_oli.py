@@ -289,129 +289,126 @@ if __name__ == '__main__':
 
 
 
-# # #original
-if __name__ == '__main__':
-    my_data = np.genfromtxt('PFR_2/PFR_all/18.09.40C_again.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+# # # #original
+# if __name__ == '__main__':
+#     my_data = np.genfromtxt('PFR_2/PFR_all/18.09.40C_again.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
-    # Extracting all temperature data
-    t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
-    results = {}
+#     # Extracting all temperature data
+#     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
+#     results = {}
 
-    for t_value in t_values:
-        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
-        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
+#     for t_value in t_values:
+#         elap_time, temp_c, offset_time = data_extract(my_data, t_value)
+#         results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
 
-    # Get AAH Flowrate and Water Flowrate
-    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
-    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
+#     # Get AAH Flowrate and Water Flowrate
+#     elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
+#     elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
 
-    # Find initial temperature and flowrates
-    initial_temperature = np.min(temp_c)
-    aah_flowrate_c = np.median(aah_flowrate_c_vector)
-    water_flowrate_c = np.median(water_flowrate_c_vector)
+#     # Find initial temperature and flowrates
+#     initial_temperature = np.min(temp_c)
+#     aah_flowrate_c = np.median(aah_flowrate_c_vector)
+#     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks=9
+#     n_tanks=9
 
-    # Run PBR model simulation
-    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+#     # Run PBR model simulation
+#     sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
 
-    # Create subplots for each reactor stage
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
-    ax = ax.flatten()
+#     # Create subplots for each reactor stage
+#     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
+#     ax = ax.flatten()
 
-    retention_time = 2 + 2 / 60  # minutes
+#     retention_time = 2 + 2 / 60  # minutes
 
-    for i in range(0, 8):
-        # Extract experimental temperature data
-        temp_data = np.array(results[t_values[-(i + 1)]]['temperature'])
-        elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
-        if i == 0:
-            tank = 1
-        else:
-            tank = math.floor((i * n_tanks) / (8)) +1
-            print(tank)
+#     for i in range(0, 8):
+#         # Extract experimental temperature data
+#         temp_data = np.array(results[t_values[-(i + 1)]]['temperature'])
+#         elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
+#         if i == 0:
+#             tank = 1
+#         else:
+#             tank = math.floor((i * n_tanks) / (8)) +1
+#             print(tank)
         
-        # Plot real temperature data
-        # ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
-        ax[i].plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
+#         # Plot real temperature data
+#         # ax[i].plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
+#         ax[i].plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
 
-        # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color='#1f77b4', label='Model Prediction', linewidth=2)
+#         # Plot model temperature data for the corresponding stage
+#         ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color='#1f77b4', label='Model Prediction', linewidth=2)
 
-        # Set plot title, labels, and grid
-        ax[i].set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
-        ax[i].set_xlabel('Elapsed Time (min)', fontsize=12)
-        ax[i].set_ylabel('Temperature (°C)', fontsize=12)
-        ax[i].set_xlim(0, 20)
-        ax[i].minorticks_on()
-        ax[i].grid(which='major', linewidth=2)
-        ax[i].grid(which='minor', linewidth=0.3)
-        ax[i].legend(fontsize=10)
+#         # Set plot title, labels, and grid
+#         ax[i].set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
+#         ax[i].set_xlabel('Elapsed Time (min)', fontsize=12)
+#         ax[i].set_ylabel('Temperature (°C)', fontsize=12)
+#         ax[i].set_xlim(0, 20)
+#         ax[i].minorticks_on()
+#         ax[i].grid(which='major', linewidth=2)
+#         ax[i].grid(which='minor', linewidth=0.3)
+#         ax[i].legend(fontsize=10)
 
-    # Set global title and adjust layout
-    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.show()
+#     # Set global title and adjust layout
+#     fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
+#     plt.tight_layout(rect=[0, 0, 1, 0.95])
+#     plt.show()
 
 ############ Ploting only 2,5, and 8 
 
-if __name__ == '__main__':
-    my_data = np.genfromtxt('PFR_2/PFR_all/18.09.40C_again.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+# if __name__ == '__main__':
+#     my_data = np.genfromtxt('PFR_2/PFR_all/18.09.40C_again.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
-    # Extracting all temperature data
-    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
-    results = {}
+#     # Extracting all temperature data
+#     t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
+#     results = {}
 
-    for t_value in t_values:
-        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
-        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time': offset_time}
+#     for t_value in t_values:
+#         elap_time, temp_c, offset_time = data_extract(my_data, t_value)
+#         results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time': offset_time}
 
-    # Get AAH Flowrate and Water Flowrate
-    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
-    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
+#     # Get AAH Flowrate and Water Flowrate
+#     elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
+#     elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
 
-    # Find initial temperature and flowrates
-    initial_temperature = np.min(temp_c)
-    aah_flowrate_c = np.median(aah_flowrate_c_vector)
-    water_flowrate_c = np.median(water_flowrate_c_vector)
+#     # Find initial temperature and flowrates
+#     initial_temperature = np.min(temp_c)
+#     aah_flowrate_c = np.median(aah_flowrate_c_vector)
+#     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks = 9
+#     n_tanks = 9
 
-    # Run PBR model simulation
-    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+#     # Run PBR model simulation
+#     sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
-    # Tanks to be plotted
-    selected_tanks = [2, 5, 8]
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+#     # Tanks to be plotted
+#     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
 
-    colors = ['firebrick', 'steelblue', 'forestgreen']  # Assign colors for each tank's plot
+#     colors = ['firebrick', 'steelblue', 'forestgreen']  # Assign colors for each tank's plot
 
-    tank_data = [2,5,8]
-    for tank in range(len(tank_data)):
-        i = tank_data[tank] - 1
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
+#     tank_data = [2,5,8]
+#     for t in range(len(tank_data)):
+#         i = tank_data[t] -1 
+#         temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
+#         elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
 
-        #plotting real temperature
-        plt.plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color= colors[tank], label=f'Real Data:{tank} ', linestyle = 'dashed', linewidth=2)
+#         #plotting real temperature
+#         plt.plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color= colors[t], label=f'Real Data, Probe {i+1} ', linestyle = 'dashed', linewidth=2)
 
-        #plotting model temperature
-        plt.plot(sol_me.t / 60, sol_me.y[3 + tank_data[tank] * 5, :] - 273.15, color= colors[tank], label=f'Model Prediction:{tank_data[tank]}', linewidth=2)
+#         #plotting model temperature
+#         plt.plot(sol_me.t / 60, sol_me.y[3 + tank_data[t] * 5, :] - 273.15, color= colors[t], label=f'Model Prediction, Tank {tank_data[t] + 1}', linewidth=2)
 
+#     # Set plot title, labels, and grid
+#     plt.title('Temperature Comparison for Tanks 2, 6, and 9', fontsize=16, fontweight='bold')
+#     plt.xlabel('Elapsed Time (min)', fontsize=12)
+#     plt.ylabel('Temperature (°C)', fontsize=12)
+#     plt.xlim(0, 20)
+#     plt.minorticks_on()
+#     plt.grid(which='major', linewidth=2)
+#     plt.grid(which='minor', linewidth=0.3)
+#     plt.legend(fontsize=10)
 
-        
-    # Set plot title, labels, and grid
-    plt.title('Temperature Comparison for Tanks 2, 5, and 8', fontsize=16, fontweight='bold')
-    plt.xlabel('Elapsed Time (min)', fontsize=12)
-    plt.ylabel('Temperature (°C)', fontsize=12)
-    plt.xlim(0, 20)
-    plt.minorticks_on()
-    plt.grid(which='major', linewidth=2)
-    plt.grid(which='minor', linewidth=0.3)
-    plt.legend(fontsize=10)
-
-    # Adjust layout and show plot
-    plt.tight_layout()
-    plt.show()
+#     # Adjust layout and show plot
+#     plt.tight_layout()
+#     plt.show()
 
