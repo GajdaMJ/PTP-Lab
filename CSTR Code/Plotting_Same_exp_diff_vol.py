@@ -6,7 +6,8 @@ import scipy.integrate
 # Assume isothermal (no exotherm)
 # Assume constant density
 
-def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
+
+def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600], t_eval=np.linspace(0,3600,500)):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -28,43 +29,32 @@ def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
     mm_water = 18.01528 # (g/mol)
     rho_water = 0.999842 # (g/ml)
     cw_pure = rho_water/mm_water # (mol/ml)
-
     #Acetic acid
     mm_AAH = 102.089 # (g/mol)
     rho_AAH = 1.082 # (g/ml)
     caah_pure = rho_AAH/mm_AAH # (mol/ml)
 
     flow_array = [fv_w_dm3_s, fv_a_dm3_s]
-
     
     params = { # Stores the relevant thermodynamic constants as a dictionary 
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
-        "Inlet temperature": T1+273.15, # Temp but now in kelvin
+        "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 4.4e15,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45622.34,             # Activation energy (J/mol)
+        "Ea": 9.62e4,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
         "cp": 4.186             # Heat capacity (J/g/K)
     }
     # print(params['C_in_AAH']*params['C_in_water'])
-    xini = [cw_pure,0,0,T1+273.15] # Initial Conditions 
-    sol_1 =  scipy.integrate.solve_ivp(der_func, [tspan[0], t_change], xini, args=(params,)) 
-    
-    #Change over
-    params["Inlet temperature"] = T2+273.15 #Change temp
-    xini = [sol_1.y[0,-1], sol_1.y[1,-1], sol_1.y[2,-1], sol_1.y[3,-1]]   #Take last row as initial conditions for next solution iteration 
-    sol_2 = scipy.integrate.solve_ivp(der_func, [t_change,tspan[1]], xini, args=(params,))
-
-    combined_time = np.concatenate((sol_1.t, sol_2.t))  # Combine time points
-    combined_y = np.concatenate((sol_1.y, sol_2.y), axis=1)  # Combine solution arrays along axis 1 (columns)
-
-    return combined_time, combined_y
+    xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,), t_eval=t_eval)
+    return sol_me
 
 def der_func(t,C, parameters):
     '''This function contains the differential equations to solve the reaction A+B->2C in an adiabatic 
@@ -151,57 +141,55 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\Data from trade\CSTR\experiment14.10.csv')
+    # Extract the data
+    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
 
-    sol_time, sol_y = CSTR_model(26.9, 29.99, 185.83, 14.89, V=567)
-
-    # Convert solution time from seconds to minutes
-    sol_time_minutes = sol_time / 60
-
-    # Extract experimental elapsed time and temperature data
-    exp_time = np.array(data_22c[0])
-    exp_temp = np.array(data_22c[1])
-
-    # Interpolate the model predictions to match experimental time points
-    model_temp_interp = np.interp(exp_time, sol_time_minutes, sol_y[3, :] - 273.15)
-
-    # Calculate residuals (experimental - model)
-    residuals = exp_temp - model_temp_interp
-
-    # Create two subplots: one for the original plot, one for residuals
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))  # Create two plots side by side
-
-    # Plot on the left: original model vs experimental data
-    ax1.plot(sol_time_minutes, sol_y[3, :] - 273.15, label='Predicted (Model)', linestyle='--', color='b', linewidth=2)
-    ax1.plot(exp_time, exp_temp, label='Experimental Data', linestyle='-', color='r', linewidth=2)
-
-    # Enhancing the left plot aesthetics
-    ax1.set_xlabel('Time [minutes]', fontsize=14, weight='bold')
-    ax1.set_ylabel('Temperature [°C]', fontsize=14, weight='bold')
-    ax1.set_title('CSTR Temperature Profile: Model vs Experimental Data', fontsize=16, weight='bold')
-
-    # Add subtitle to the left plot
-    # Add subtitle to the left plot with more vertical space
-    ax1.text(0.5, 0.92, r'$T_1 = 27°C, T_2 = 30°C$', transform=ax1.transAxes, fontsize=12, ha='center')
+    time_data = np.array(data_22c[0][8:90])
+    conc_data = np.array(data_22c[1][8:90])
+    time_data = time_data-time_data[0]
+    
+    # Run the models for different volumes
+    sol_mereal = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567, t_eval=np.linspace(time_data[0], time_data[-1]*60, len(time_data)))
+    sol_me500 = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=500, t_eval=np.linspace(time_data[0], time_data[-1]*60, len(time_data)))
+    sol_me600 = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=600, t_eval=np.linspace(time_data[0], time_data[-1]*60, len(time_data)))
 
 
-    ax1.grid(True, which='both', linestyle='--', linewidth=0.7)
-    ax1.legend(fontsize=12, loc='best')
-    ax1.set_xlim(0, 55)
+    # Calculate the residuals (difference between real and modeled temperatures)
+    # After extracting the data and running the models
+    # Calculate the residuals for each model
 
-    # Plot on the right: residuals (experimental - model)
-    ax2.plot(exp_time, residuals, label='Residuals (Exp - Model)', color='g', linestyle='-', linewidth=2)
 
-    # Enhancing the right plot aesthetics
-    ax2.set_xlabel('Time [minutes]', fontsize=14, weight='bold')
-    ax2.set_ylabel('Residuals [°C]', fontsize=14, weight='bold')
-    ax2.set_title('Residuals of Temperature (Exp - Model)', fontsize=16, weight='bold')
-    ax2.axhline(0, color='black', linestyle='--', linewidth=1)  # Add a horizontal line at 0 for reference
-    ax2.grid(True, which='both', linestyle='--', linewidth=0.7)
-    ax2.set_xlim(0, 55)
+    # Create a figure with two subplots (1 row, 2 columns)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-    # Applying tight layout for better spacing of elements
+    # Plot temperature vs. time on the left subplot
+    ax1.plot(sol_mereal.t / 60, sol_mereal.y[3, :] - 273.15, label='True Volume 567 ml', color='tab:blue', linewidth=2)
+    ax1.plot(sol_me500.t / 60, sol_me500.y[3, :] - 273.15, label='Volume 500 ml', color='tab:orange', linestyle='--', linewidth=2)
+    ax1.plot(sol_me600.t / 60, sol_me600.y[3, :] - 273.15, label='Volume 600 ml', color='tab:green', linestyle='-.', linewidth=2)
+    ax1.plot(time_data, conc_data, label='Real Data', color='tab:red')
+
+    # Customize the first plot (temperature vs. time)
+    ax1.set_xlabel('Time (minutes)', fontsize=14, weight='bold')
+    ax1.set_ylabel('Temperature (°C)', fontsize=14, weight='bold')
+    ax1.set_title('Temperature vs. Time', fontsize=16, weight='bold')
+    ax1.legend(fontsize=12)
+    ax1.grid(True, linestyle='--', alpha=0.7)
+    ax1.set_xlim(0,33)
+    # Plot the residuals (difference between real data and model) on the right subplot
+    ax2.plot(sol_mereal.t / 60, conc_data-sol_mereal.y[3,:]+273.15, label='Residuals Volume 567 ml', color='tab:blue', linewidth=2)
+    ax2.plot(sol_me500.t / 60, conc_data-sol_me500.y[3,:]+273.15, label='Residuals Volume 500 ml', color='tab:orange', linestyle='--', linewidth=2)
+    ax2.plot(sol_me600.t / 60, conc_data-sol_me600.y[3,:]+273.15, label='Residuals Volume 600 ml', color='tab:green', linestyle='-.', linewidth=2)
+
+    # Customize the second plot (residuals)
+    ax2.set_xlabel('Time (minutes)', fontsize=14, weight='bold')
+    ax2.set_ylabel('Residuals (°C)', fontsize=14, weight='bold')
+    ax2.set_title('Residuals (Model vs. Real Data)', fontsize=16, weight='bold')
+    ax2.legend(fontsize=12)
+    ax2.grid(True, linestyle='--', alpha=0.7)
+    ax2.axhline(0, color='black', linestyle='--', linewidth=1)
+    ax2.set_xlim(0,33)
+    # Tight layout for better spacing
     plt.tight_layout()
 
-    # Display the combined plots
+    # Show the combined plot
     plt.show()

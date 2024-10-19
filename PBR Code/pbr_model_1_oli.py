@@ -463,33 +463,45 @@ if __name__ == '__main__':
     sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
     retention_time = 2 + 2 / 60  # minutes
-    colors = ['orange', 'blue', 'green', 'black', 'red', 'indigo', 'lavender', 'lightpink']
+    colors = ['black', 'blue', 'orange']
 
-    tank = []
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i + 1)]]['temperature'])
         elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
         if i == 0:
-            tank.append(1)
-                    
+            tank = 1
         else:
-            (tank math.ceil((i * n_tanks) / (8)))
+            tank = math.ceil((i * n_tanks) / (8))
 
-        # Plot real temperature data
-        plt.plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color= colors[i], label='Real Data', linewidth=2)
+        if tank == 2:
+            # Plot real temperature data
+            plt.plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color= 'black', label= f'Real Data (probe {i})', linewidth=2)
 
-        # Plot model temperature data for the corresponding stage
-        plt.plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15,linestyle = 'dashed', color= colors[i], label='Model Prediction', linewidth=2)
+            # Plot model temperature data for the corresponding stage
+            plt.plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15,linestyle = 'dashed', color = 'black', label= f'Model Prediction for tank {tank}', linewidth=2)
 
-        # Set plot title, labels, and grid
-        plt.title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
-        plt.xlabel('Elapsed Time (min)', fontsize=12)
-        plt.ylabel('Temperature (°C)', fontsize=12)
-        plt.xlim(0, 20)
-        plt.legend(fontsize=10)
+        if tank == 5: 
+            # Plot real temperature data
+            plt.plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color = 'blue', label=f'Real Data (probe {i})', linewidth=2)
 
-    # Set global title and adjust layout
+            # Plot model temperature data for the corresponding stage
+            plt.plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15,linestyle = 'dashed', color = 'blue', label=f'Model Prediction for tank {tank}', linewidth=2)
+
+        if tank ==8: 
+            # Plot real temperature data
+            plt.plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color = 'orange', label=f'Real Data (probe {i})', linewidth=2)
+
+            # Plot model temperature data for the corresponding stage
+            plt.plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15,linestyle = 'dashed', color = 'orange', label=f'Model Prediction for tank {tank}', linewidth=2)
+                   
+
+    #making plot look waw
+    plt.title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
+    plt.xlabel('Elapsed Time (min)', fontsize=12)
+    plt.ylabel('Temperature (°C)', fontsize=12)
+    plt.xlim(0, 20)
+    plt.legend(fontsize=10)
     plt.minorticks_on()
     plt.grid(which = 'major')
     plt.grid(which = 'minor', linewidth = 0.1)

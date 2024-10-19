@@ -243,14 +243,6 @@ if __name__ == '__main__':
     ax = ax.flatten()
 
     retention_time = 2 + 2/60 #minutes
-
-   # Create subplots for each reactor stage
-    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
-    ax = ax.flatten()
-
-    retention_time = 2 + 2/60 #minutes
-
-
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
