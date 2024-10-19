@@ -417,7 +417,7 @@ if __name__ == '__main__':
 
         if tank ==8: 
             # Plot real temperature data
-            plt.plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color = 'organe', label=f'Real Data (probe {i})', linewidth=2)
+            plt.plot(elapsed_time, temp_data - temp_data[0]+initial_temperature, color = 'orange', label=f'Real Data (probe {i})', linewidth=2)
 
             # Plot model temperature data for the corresponding stage
             plt.plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15,linestyle = 'dashed', color = 'orange', label=f'Model Prediction for tank {tank}', linewidth=2)
