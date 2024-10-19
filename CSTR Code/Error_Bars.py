@@ -42,10 +42,10 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 5198.17647e4,          # Reaction rate constant (ml/mol/s)
+        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 47234.548502613135,             # Activation energy (J/mol)
+        "Ea": 45622.34,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
@@ -141,16 +141,43 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
+    # Load the datasets
     data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
-    sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
+    data_round2 = data_extract('Data\\Data from trade\\CSTR\\experiment14.10.csv')
+    
+    # Convert to numpy arrays
+    elapsed_time_22c, temp_22c, initial_temperature_22c, aah_flowrate_22c, water_flowrate_22c = data_22c
+    elapsed_time_round2, temp_round2, initial_temperature_round2, aah_flowrate_round2, water_flowrate_round2 = data_round2
 
-    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
+    # Select specific slices
+    time_slice_22c = elapsed_time_22c[4:80]  # 4 to 80
+    temp_slice_22c = temp_22c[4:80]
+
+    time_slice_round2 = elapsed_time_round2[12:49]  # 12 to 49
+    temp_slice_round2 = temp_round2[12:49]
+
+    # Create an array of times and temperatures
+    # Since the time ranges may not match, we will align the datasets
+    common_time = np.union1d(time_slice_22c, time_slice_round2)  # Get all unique time points
+
+    # Interpolate temperature values for the common time points
+    temp_interpolated_22c = np.interp(common_time, time_slice_22c, temp_slice_22c)
+    temp_interpolated_round2 = np.interp(common_time, time_slice_round2, temp_slice_round2)
+
+    # Calculate average temperature and standard deviation
+    avg_temp = (temp_interpolated_22c + temp_interpolated_round2) / 2
+    std_temp = np.std([temp_interpolated_22c, temp_interpolated_round2], axis=0)
+
+    plt.figure(figsize=(10, 6))
+    plt.errorbar(common_time, avg_temp, yerr=std_temp, fmt='-o', label='Average Temperature', color='blue', capsize=5, elinewidth=1, markerfacecolor='red', markeredgecolor='black')
+    
     plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
+    plt.ylabel('Temperature (°C)')
+    plt.title('Average Temperature with Standard Deviation Error Bars')
     plt.legend()
-    plt.title('Temperature')
+    plt.grid()
+    plt.xlim(0, 30)
     plt.show()
+
+    print("Average Temperature:", avg_temp)
+    print("Standard Deviation:", std_temp)

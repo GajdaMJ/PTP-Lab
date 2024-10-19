@@ -42,10 +42,10 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 5198.17647e4,          # Reaction rate constant (ml/mol/s)
+        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 47234.548502613135,             # Activation energy (J/mol)
+        "Ea": 45622.34,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
@@ -123,10 +123,13 @@ def temp_extract(data, x="T200_PV", offset=0):
 def data_extract(data_path):
     '''Extracts the initial conditions for a the reaction \n
     Data_Path = relative path to the csv document'''
-    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding=None) #built in numpy function to extract data
+    data_numpy = np.genfromtxt(data_path, delimiter=';', dtype=None, names=True, encoding='ISO-8859-1') #built in numpy function to extract data
 
     #Get temperature
     elapsed_time, temp = temp_extract(data_numpy) 
+
+    #getting conduction
+    elapsed_time_cond, conductivity = temp_extract(data_numpy,"Q210_PV")
 
     #Get AAH Flowrate
     elapsed_time_aah, aah_flowrate_vector = temp_extract(data_numpy, x="P120_Flow")
@@ -137,20 +140,68 @@ def data_extract(data_path):
     initial_temperature = np.min(temp) # Minimum temp = ini temp
     aah_flowrate = np.median(aah_flowrate_vector) # better than the average because sometimes we press prime before the experiment starts
     water_flowrate = np.median(water_flowrate_vector) # the signal is also kinda noisy 
-    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate
+    return elapsed_time, temp, initial_temperature, aah_flowrate, water_flowrate, elapsed_time_cond,conductivity
 
-
+#plotting conc and temp at the same time
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
+    data_22c = data_extract('Data/CSTR/Runs 16.09/CSTR 27c.csv')
     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
 
-    # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')
-    # plt.plot(sol_me[0], sol_me[1][:, 2], label='Conc. AA_me')
-    plt.plot(sol_me.t/60, sol_me.y[3, :]-273.15, label='think')
-    plt.plot(data_22c[0], data_22c[1], label='real')
-    plt.xlabel('Time (minutes)')
-    plt.xlim(0, np.max(data_22c[1]))
-    plt.ylabel('Temperature')
-    plt.legend()
-    plt.title('Temperature')
+    concentration = []
+    cond = np.array(data_22c[6])
+    for i in range(len(cond)):
+        concentration.append((0.13817 * np.exp(0.00154*cond[i] - 0.18402))/1000)
+
+    fig, ax = plt.subplots(2, figsize = (20,8), sharex = False, sharey= False)
+    ax = ax.flatten()
+    
+#plotting concentration
+    ax[0].plot(sol_me.t/60, sol_me.y[2, :], label='think')
+    ax[0].plot(data_22c[5], concentration - concentration[0], label='real')
+    ax[0].set_xlabel('Time (minutes)', fontsize = 12)
+    ax[0].set_xlim(0, np.max(data_22c[1]))
+    ax[0].set_ylabel('Concentration', fontsize = 12)
+    ax[0].legend(fontsize = 10)
+    ax[0].set_title('Concentration', fontsize = 14, fontweight = "bold")
+    ax[0].minorticks_on()
+    ax[0].grid(which='major',linewidth=2)
+    ax[0].grid(which='minor',linewidth=0.3)
+
+#plotting temperature
+    ax[1].plot(sol_me.t/60, sol_me.y[3, :]- 273.15, label='think')
+    ax[1].plot(data_22c[0], data_22c[1], label='real')
+    ax[1].set_xlabel('Time (minutes)', fontsize = 12)
+    ax[1].set_xlim(0, np.max(data_22c[1]))
+    ax[1].set_ylabel('Temperature', fontsize = 12)
+    ax[1].legend(fontsize = 10)
+    ax[1].set_title('Temperature', fontsize = 14, fontweight = "bold")
+    ax[1].minorticks_on()
+    ax[1].grid(which='major',linewidth=2)
+    ax[1].grid(which='minor',linewidth=0.3)
+
+    fig.suptitle('CSTR Reactor', fontsize = 16, fontweight = 'bold')
+    plt.tight_layout()
     plt.show()
+
+##plotting only the concentration on one plot
+# if __name__ == '__main__':
+#     data_22c = data_extract('Data/CSTR/Runs 16.09/CSTR 27c.csv')
+#     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
+
+#     concentration = []
+#     cond = np.array(data_22c[6])
+#     for i in range(len(cond)):
+#         concentration.append((0.13817 * np.exp(0.00154*cond[i] - 0.18402))/1000)
+
+
+#     plt.plot(sol_me.t/60, sol_me.y[2, :], label='think')
+#     plt.plot(data_22c[5], concentration - concentration[0], label='real')
+#     plt.xlabel('Time (minutes)', fontsize = 12)
+#     # plt.xlim(0, np.max(data_22c[1]))
+#     plt.ylabel('Concentration', fontsize = 12)
+#     plt.legend(fontsize = 10)
+#     plt.title('Concentration', fontsize = 14, fontweight = "bold")
+#     plt.minorticks_on()
+#     plt.grid(which='major',linewidth=2)
+#     plt.grid(which='minor',linewidth=0.3)
+#     plt.show()

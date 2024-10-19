@@ -54,10 +54,10 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 4.3e14, #437418593618788.81250000, #6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45187.2,             # Activation energy (J/mol)
+        "Ea": 9.85e4,#97673.47083209756, #45187.2,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
@@ -83,7 +83,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         elif np.mod(i, 5)==4:
             xini[i] = xini_temp[4]
 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, t_eval=np.linspace(tspan[0], tspan[1], 400), args=(params, n)) 
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, t_eval=np.linspace(tspan[0], tspan[1], 500), args=(params, n)) 
     return sol_me
 
 def der_func(t,C, parameters, n=6):
@@ -123,7 +123,7 @@ def der_func(t,C, parameters, n=6):
            dcdt[0] = (total_flow / V) * (C_in_w - C[0]) - C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Water Concentration derivative
            dcdt[1] = (total_flow / V) * (C_in_AAH - C[1]) - C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Anhydride Concentration derivative
            dcdt[2] = (total_flow / V) * (0 - C[2]) + 2 * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Acetic acid concentration derivative
-           dcdt[3] = (total_flow / V) * (inlet_temp - C[3]) - H / (rho_water * cp_water) * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) + (U * A) / (rho_water * cp_water * V) * (C[i+1] - C[3])  # Reactor temperature derivative
+           dcdt[3] = (total_flow / V) * (inlet_temp - C[3]) - H / (rho_water * cp_water) * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) + (U * A) / (rho_glass * cp_glass * V) * (C[i+1] - C[3])  # Reactor temperature derivative
            # Glass bead temperature derivative
            dcdt[4] = (U * A) / (rho_glass * cp_glass * V) * (C[3] - C[4])  # Temperature change of glass beads
         else:
@@ -135,7 +135,7 @@ def der_func(t,C, parameters, n=6):
             elif np.mod(i, 5) == 2:
                 dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) + 2 * C[i - 2] * C[i - 1] * k0 * np.exp(-Ea / (R * C[i + 1])) # AA
             elif np.mod(i, 5) == 3:
-                dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) - H / (rho_water * cp_water) * C[i - 3] * C[i - 2] * k0 * np.exp(-Ea / (R * C[i])) + (U * A) / (rho_water * cp_water * V) * (C[i+1] - C[i]) 
+                dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) - H / (rho_water * cp_water) * C[i - 3] * C[i - 2] * k0 * np.exp(-Ea / (R * C[i])) + (U * A) / (rho_glass * cp_glass * V) * (C[i+1] - C[i]) 
             elif np.mod(i, 5) == 4:
                 dcdt[i] = (U * A) / (rho_glass * cp_glass * V) * (C[i - 1] - C[i])  # Temperature change of glass beads for additional reactors
     return dcdt
@@ -232,7 +232,7 @@ if __name__ == '__main__':
         if i == 0:
             tank = 1
         else:
-            tank = math.ceil((i * n_tanks) / (8))
+            tank = math.ceil((i * n_tanks) / (8))+1
 
         # Plot real temperature data
         ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data', linewidth=2)
