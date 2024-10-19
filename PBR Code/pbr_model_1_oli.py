@@ -414,4 +414,4 @@ if __name__ == '__main__':
     # Adjust layout and show plot
     plt.tight_layout()
     plt.show()
-
+plt.show()
