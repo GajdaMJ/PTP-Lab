@@ -229,6 +229,8 @@ if __name__ == '__main__':
     for i in range(0, 8):
         waterbath_temps = []  # To store all water bath temperatures from all files
         temp_probe_temps = []  # To store all probe temperatures from all files
+        probe_values = []
+
 
         actual_value= [] #initialize actual value 
         predicted_value = [] #initialize predicted array
@@ -239,7 +241,7 @@ if __name__ == '__main__':
                 continue
             temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
 
-            actual_value.append(temp_data[0])
+            probe_values.append(temp_data[0]) #obtaining the first temperature for all the different files
 
 
             # Extract the initial temperature (first value) from the real data
@@ -247,7 +249,8 @@ if __name__ == '__main__':
             temp_probe_temps.append(initial_real_temp)  # Store the real temperatures
 
             # Get the water bath temperature (assuming the last value in t_values is T400_PV)
-            waterbath_temp_data = np.array(results[file][t_values[8]]['temperature'])  # T400_PV is index 8
+            waterbath_temp_data = np.array(results[file][t_values[-1]]['temperature'])  # T400_PV (waterbath) is the last value
+
             initial_waterbath_temp = waterbath_temp_data[0]
             waterbath_temps.append(initial_waterbath_temp)  # Store the water bath temperatures
 
@@ -278,13 +281,12 @@ if __name__ == '__main__':
             y_intercepts.append(b)
             
             for file in range(len(data_files)):
-                predicted_value.append(m*actual_value[file] + b)
+                predicted_value.append(m*probe_values[file] + b)
             
-            corr_matrix = np.corrcoef(actual_value,predicted_value)
+            corr_matrix = np.corrcoef(waterbath_temps,predicted_value)
             corr = corr_matrix[0,1]
-            print(predicted_value)
-            print(actual_value)
-            print(corr**2)
+
+            print(f" The r^2 for probe {i} is: {corr**2}")
             r_sq.append(corr**2)
 
 
