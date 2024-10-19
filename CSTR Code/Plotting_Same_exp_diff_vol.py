@@ -7,7 +7,7 @@ import scipy.integrate
 # Assume constant density
 
 
-def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
+def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600], t_eval=np.linspace(0,3600,500)):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -42,10 +42,10 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 5198.17647e4,          # Reaction rate constant (ml/mol/s)
+        "k0": 4.4e15,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 47234.548502613135,             # Activation energy (J/mol)
+        "Ea": 9.62e4,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
@@ -53,7 +53,7 @@ def CSTR_model(T,fv1,fv2, V=500, tspan = [0,3600]):
     }
     # print(params['C_in_AAH']*params['C_in_water'])
     xini = [cw_pure,0,0,T+273.15] # Initial Conditions 
-    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,))
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, args=(params,), t_eval=t_eval)
     return sol_me
 
 def der_func(t,C, parameters):
@@ -144,16 +144,20 @@ if __name__ == '__main__':
     # Extract the data
     data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
 
+    time_data = np.array(data_22c[0][8:90])
+    conc_data = np.array(data_22c[1][8:90])
+    time_data = time_data-time_data[0]
+    
     # Run the models for different volumes
-    sol_mereal = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
-    sol_me500 = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=500)
-    sol_me600 = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=600)
+    sol_mereal = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567, t_eval=np.linspace(time_data[0], time_data[-1]*60, len(time_data)))
+    sol_me500 = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=500, t_eval=np.linspace(time_data[0], time_data[-1]*60, len(time_data)))
+    sol_me600 = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=600, t_eval=np.linspace(time_data[0], time_data[-1]*60, len(time_data)))
+
 
     # Calculate the residuals (difference between real and modeled temperatures)
-    real_time_interp = np.interp(sol_mereal.t / 60, data_22c[0], data_22c[1])
-    residual_567 = real_time_interp - (sol_mereal.y[3, :] - 273.15)
-    residual_500 = real_time_interp - (sol_me500.y[3, :] - 273.15)
-    residual_600 = real_time_interp - (sol_me600.y[3, :] - 273.15)
+    # After extracting the data and running the models
+    # Calculate the residuals for each model
+
 
     # Create a figure with two subplots (1 row, 2 columns)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -162,7 +166,7 @@ if __name__ == '__main__':
     ax1.plot(sol_mereal.t / 60, sol_mereal.y[3, :] - 273.15, label='True Volume 567 ml', color='tab:blue', linewidth=2)
     ax1.plot(sol_me500.t / 60, sol_me500.y[3, :] - 273.15, label='Volume 500 ml', color='tab:orange', linestyle='--', linewidth=2)
     ax1.plot(sol_me600.t / 60, sol_me600.y[3, :] - 273.15, label='Volume 600 ml', color='tab:green', linestyle='-.', linewidth=2)
-    ax1.plot(data_22c[0], data_22c[1], label='Real Data', color='tab:red')
+    ax1.plot(time_data, conc_data, label='Real Data', color='tab:red')
 
     # Customize the first plot (temperature vs. time)
     ax1.set_xlabel('Time (minutes)', fontsize=14, weight='bold')
@@ -170,11 +174,11 @@ if __name__ == '__main__':
     ax1.set_title('Temperature vs. Time', fontsize=16, weight='bold')
     ax1.legend(fontsize=12)
     ax1.grid(True, linestyle='--', alpha=0.7)
-
+    ax1.set_xlim(0,33)
     # Plot the residuals (difference between real data and model) on the right subplot
-    ax2.plot(sol_mereal.t / 60, residual_567, label='Residuals Volume 567 ml', color='tab:blue', linewidth=2)
-    ax2.plot(sol_me500.t / 60, residual_500, label='Residuals Volume 500 ml', color='tab:orange', linestyle='--', linewidth=2)
-    ax2.plot(sol_me600.t / 60, residual_600, label='Residuals Volume 600 ml', color='tab:green', linestyle='-.', linewidth=2)
+    ax2.plot(sol_mereal.t / 60, conc_data-sol_mereal.y[3,:]+273.15, label='Residuals Volume 567 ml', color='tab:blue', linewidth=2)
+    ax2.plot(sol_me500.t / 60, conc_data-sol_me500.y[3,:]+273.15, label='Residuals Volume 500 ml', color='tab:orange', linestyle='--', linewidth=2)
+    ax2.plot(sol_me600.t / 60, conc_data-sol_me600.y[3,:]+273.15, label='Residuals Volume 600 ml', color='tab:green', linestyle='-.', linewidth=2)
 
     # Customize the second plot (residuals)
     ax2.set_xlabel('Time (minutes)', fontsize=14, weight='bold')
@@ -183,7 +187,7 @@ if __name__ == '__main__':
     ax2.legend(fontsize=12)
     ax2.grid(True, linestyle='--', alpha=0.7)
     ax2.axhline(0, color='black', linestyle='--', linewidth=1)
-
+    ax2.set_xlim(0,33)
     # Tight layout for better spacing
     plt.tight_layout()
 
