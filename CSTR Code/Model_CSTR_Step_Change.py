@@ -151,34 +151,73 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
+    import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime
+import scipy.integrate
+
+# Existing functions for the CSTR model and data extraction...
+
+if __name__ == '__main__':
+    import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime
+import scipy.integrate
+
+# Existing functions for the CSTR model and data extraction...
+
+if __name__ == '__main__':
     data_22c = data_extract('Data\Data from trade\CSTR\experiment14.10.csv')
 
     sol_time, sol_y = CSTR_model(26.9, 29.99, 185.83, 14.89, V=567)
 
-    plt.figure(figsize=(10, 6))  # Larger figure size for better visibility
+    # Convert solution time from seconds to minutes
+    sol_time_minutes = sol_time / 60
 
-    # Plot simulation results (CSTR model)
-    plt.plot(sol_time/60, sol_y[3, :] - 273.15, label='Predicted (Model)', linestyle='--', color='b', linewidth=2)
+    # Extract experimental elapsed time and temperature data
+    exp_time = np.array(data_22c[0])
+    exp_temp = np.array(data_22c[1])
 
-    # Plot experimental data
-    plt.plot(data_22c[0], data_22c[1], label='Experimental Data', linestyle='-', color='r', linewidth=2)
+    # Interpolate the model predictions to match experimental time points
+    model_temp_interp = np.interp(exp_time, sol_time_minutes, sol_y[3, :] - 273.15)
 
-    # Enhancing the plot aesthetics
-    plt.xlabel('Time [minutes]', fontsize=14, weight='bold')
-    plt.ylabel('Temperature [°C]', fontsize=14, weight='bold')
-    plt.title('CSTR Temperature Profile: Model vs Experimental Data (Step Change)', fontsize=16, weight='bold')
-    
-    # Adding grid for clarity
-    plt.grid(True, which='both', linestyle='--', linewidth=0.7)
+    # Calculate residuals (experimental - model)
+    residuals = exp_temp - model_temp_interp
 
-    # Adjusting legend for clarity
-    plt.legend(fontsize=12, loc='best')
+    # Create two subplots: one for the original plot, one for residuals
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))  # Create two plots side by side
 
-    # Limiting x-axis to the relevant time frame
-    plt.xlim(0, 55)
+    # Plot on the left: original model vs experimental data
+    ax1.plot(sol_time_minutes, sol_y[3, :] - 273.15, label='Predicted (Model)', linestyle='--', color='b', linewidth=2)
+    ax1.plot(exp_time, exp_temp, label='Experimental Data', linestyle='-', color='r', linewidth=2)
+
+    # Enhancing the left plot aesthetics
+    ax1.set_xlabel('Time [minutes]', fontsize=14, weight='bold')
+    ax1.set_ylabel('Temperature [°C]', fontsize=14, weight='bold')
+    ax1.set_title('CSTR Temperature Profile: Model vs Experimental Data', fontsize=16, weight='bold')
+
+    # Add subtitle to the left plot
+    # Add subtitle to the left plot with more vertical space
+    ax1.text(0.5, 0.92, r'$T_1 = 27°C, T_2 = 30°C$', transform=ax1.transAxes, fontsize=12, ha='center')
+
+
+    ax1.grid(True, which='both', linestyle='--', linewidth=0.7)
+    ax1.legend(fontsize=12, loc='best')
+    ax1.set_xlim(0, 55)
+
+    # Plot on the right: residuals (experimental - model)
+    ax2.plot(exp_time, residuals, label='Residuals (Exp - Model)', color='g', linestyle='-', linewidth=2)
+
+    # Enhancing the right plot aesthetics
+    ax2.set_xlabel('Time [minutes]', fontsize=14, weight='bold')
+    ax2.set_ylabel('Residuals [°C]', fontsize=14, weight='bold')
+    ax2.set_title('Residuals of Temperature (Exp - Model)', fontsize=16, weight='bold')
+    ax2.axhline(0, color='black', linestyle='--', linewidth=1)  # Add a horizontal line at 0 for reference
+    ax2.grid(True, which='both', linestyle='--', linewidth=0.7)
+    ax2.set_xlim(0, 55)
 
     # Applying tight layout for better spacing of elements
     plt.tight_layout()
 
-    # Displaying the plot
+    # Display the combined plots
     plt.show()

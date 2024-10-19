@@ -3,18 +3,16 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import scipy.integrate
 import math
-# Assume reaction is 1st order wrt both components
-# Assume isothermal (no exotherm)
-# Assume constant density
+from scipy.optimize import minimize
 
 def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
-    '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
+    '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic PBR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
     fv1 = flow rate of water in units ml/min \n
     fv2 = flow rate of acetic anhydride ml/min \n
     Optional Arguments: \n
-    V = volume of the reactor in units ml (default set to 500ml) \n
+    V = volume of the reactor in units ml (default set to 131ml) \n
     tspan = list of evaluation time in units seconds (default set to [0,3600]) \n
     This function was built for the course "Practical Process Technology (6P4X0)" 
     '''
@@ -52,11 +50,11 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 10080744.61904, #543038.12581,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
-
-        # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 54880.990247248585,#47234.548502613135,             # Activation energy (J/mol)
+        "k0": 4.4e14,              # Reaction rate constant (ml/mol/s)
+        "Ea": 9.825e4,             # Activation energy (J/mol)
+        # k0 and ea are our own yay!
         "R": 8.314,              # Gas constant (J/mol/K)
+        # Thermodynamic constants (taken from Asprey et al., 1996)        
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
         "rho_glass": 2.4,          # Density (g/ml)
@@ -66,7 +64,7 @@ def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
         "Area_bead_per_tank": A_per_tank, # Area of beads per "tank"
         "U" : 1.2122e-4#0.12122 # Oliver calc
     }
-    # print(params['C_in_AAH']*params['C_in_water'])
+
     xini_temp = [cw_pure,0,0,T+273.15, T+273.15] # Initial Conditions 
     xini = np.zeros(5*n)
     for i in range(5*n):
@@ -196,39 +194,43 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import minimize
 
-def least_squares_error(sol_me, results, t_values, n_tanks, initial_temperature):
-    '''Calculates the least squares error between model predictions and real temperature data'''
 
+def sum_of_squared_error(results, sol_me, t_values, n_tanks, initial_temperature):
+    '''Calculates the sum of squared error.'''
+    
     total_error = 0
+    probe_errors = {}
 
-    for i in range(0, 8):
-        # Extract experimental temperature data
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-        tank = math.ceil((i * n_tanks) / 8)
-
-        # Interpolate model prediction to align with experimental time points
-        model_temperature = np.interp(elapsed_time, sol_me.t / 60, sol_me.y[3 + tank*5, :] - 273.15)
-
-        # Calculate the residuals (difference between model and real data)
-        residuals = temp_data - model_temperature - initial_temperature
+    for i, t_value in enumerate(t_values):
+        temp_data = np.array(results[t_value]['temperature'])
+        elapsed_time = np.array(results[t_value]['elapsed_time']) #Get data
         
-        # Sum of squared residuals
-        squared_error = np.sum(residuals**2)
+        
+        tank = min(math.ceil((i * n_tanks) / len(t_values)), n_tanks - 1) #check the tank number and make sure it doesnt overshoot
+        
+        # Interpolate the data cause it doesnt evaluate on the same time
+        model_temperature = np.interp(elapsed_time, sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15)  # Model prediction in Celsius
+        
+        
+        residuals = temp_data - model_temperature - (initial_temperature - np.min(temp_data)) #calculate the residuals
+    
+        squared_error = np.sum(residuals**2) #Residual squares
+
+        probe_errors[t_value] = squared_error
+        
+        # Add to total error across all probes
         total_error += squared_error
 
-    return total_error
+    
+    return probe_errors, total_error
 
-# Now we add least squares comparison to your main code
+
+
 if __name__ == '__main__':
     my_data = np.genfromtxt('Data\PFR\\25.09.33C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
-
-    # Extracting all temperature data
-    t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
+    t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV'] #Names of probes
+    
     results = {}
 
     for t_value in t_values:
@@ -244,25 +246,62 @@ if __name__ == '__main__':
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
-    n_tanks_range = range(8, 20)  # Range of number of tanks to test
-    error_list = []  # List to store (n_tanks, error) tuples
+    n_tanks=9
 
+    # Run PBR model simulation
+    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+
+    # Create subplots for each reactor stage
+    fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
+    ax = ax.flatten()
+
+    retention_time = 2 + 2 / 60  # minutes
+
+    for i in range(0, 8):
+        # Extract experimental temperature data
+        temp_data = np.array(results[t_values[-(i + 1)]]['temperature'])
+        elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
+        if i == 0:
+            tank = 0
+        else:
+            tank = math.ceil((i * n_tanks) / (8))
+
+        # Plot real temperature data
+        ax[i].plot(elapsed_time, temp_data - temp_data[0], color='#ff7f0e', label='Real Data', linewidth=2)
+
+        # Plot model temperature data for the corresponding stage
+        ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15 - initial_temperature, color='#1f77b4', label='Model Prediction', linewidth=2)
+
+        # Set plot title, labels, and grid
+        ax[i].set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
+        ax[i].set_xlabel('Elapsed Time (min)', fontsize=12)
+        ax[i].set_ylabel('Change in Temperature (°C)', fontsize=12)
+        ax[i].set_xlim(0, 20)
+        ax[i].grid(True)
+        ax[i].legend(fontsize=10)
+
+    # Set global title and adjust layout
+    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+    n_tanks_range = range(8, 20)
+    error_list = []  # will store (#of tanks , error)
     for i in n_tanks_range:
-        # Run PBR model simulation
+        # Run the model for the current number of tanks
         sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=i)
 
-        # Calculate least squares error
-        error = least_squares_error(sol_me, results, t_values, i, initial_temperature)
+        # Compute sum of squared errors between model and experimental data
+        probe_errors, total_error = sum_of_squared_error(results, sol_me, t_values, i, initial_temperature)
 
-        # Store the number of tanks and corresponding error in the list
-        error_list.append((i, error))
-        print(f'Total least squares error: {error:.4f} for {i} tanks')
 
-    # Find the configuration with the minimum error
+        print(f"Total SSE for {i} tanks: {total_error:.2f}")
+
+        # Append the current tank number and total error to the error list
+        error_list.append((i, total_error))
+
+    # After the loop, find the optimal number of tanks with the minimum total error
     best_n_tanks, min_error = min(error_list, key=lambda x: x[1])
 
-    # Print the best result
+    # Print the result of the optimal tank search
     print(f'\nThe optimal number of tanks is {best_n_tanks} with the lowest least squares error of {min_error:.4f}.')
-
-
-    

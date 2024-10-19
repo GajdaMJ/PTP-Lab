@@ -52,10 +52,8 @@ def PBR_model(T1, T2,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change1=1800, 
         "Inlet temperature": T1+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 6.5e5,#np.exp(16),#7e6,          # Reaction rate constant (ml/mol/s)
-
-        # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45622.34,             # Activation energy (J/mol)
+        "k0": 4.4e14,              # Reaction rate constant (ml/mol/s)
+        "Ea": 9.825e4,            # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
@@ -231,14 +229,14 @@ if __name__ == '__main__':
     initial_temperature = np.min(temp_c)
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
-    
-    n_tanks=16
+    print(initial_temperature)
+    n_tanks=9
 
     aah_flowrate_1 = aah_flowrate_c_vector[7]
     aah_flowrate_2 = aah_flowrate_c_vector[-8]
     
     # Run PBR model simulation
-    sol_time, sol_y = PBR_model(initial_temperature, 35, water_flowrate_c, aah_flowrate_1, aah_flowrate_2, V=131, tspan=[0, 3600], t_change1=9*60, t_change2=27*60, n=n_tanks)
+    sol_time, sol_y = PBR_model(initial_temperature, 35, 24.3216648101807, 1.8605090379715, 3.3137059211731, V=131, tspan=[0, 3600], t_change1=11*60+20, t_change2=25*60+55, n=n_tanks)
 
     # Create subplots for each reactor stage
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
