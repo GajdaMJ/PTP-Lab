@@ -196,7 +196,11 @@ def data_extract(data, x, offset=0):
 
 
 if __name__ == '__main__':
-    my_data = np.genfromtxt('Data/PFR/25.09.30C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+    data = ['18.09.25.C_again','18.09.40C_again', '25.09.30C']
+    my_data = np.zeros(len(data))
+    
+    for file in data:
+        my_data[file] = np.genfromtxt(f'Data/PFR/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
     # Extracting all temperature data
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
@@ -226,7 +230,6 @@ if __name__ == '__main__':
 
     retention_time = 2 + 2/60 #minutes
 
-    #chang
     for i in range(0, 8):
         # Extract experimental temperature data
         temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
@@ -236,6 +239,7 @@ if __name__ == '__main__':
 
         # # Plotting the initial temperature of the model vs the initial real temperature
         ax[i].scatter(temp_data[0] , sol_me.y[3 + tank*5, 0] - 273.15+10, color='red')
+        ax[i].scatter(temp_data[0], sol_me.y[3.+tank*5,0] - 273.15+10, color = 'blue')
 
         # Set plot title, labels, and grid
         ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
@@ -249,4 +253,5 @@ if __name__ == '__main__':
     fig.suptitle('Reactor Temperature Data Comparison', fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+
 
