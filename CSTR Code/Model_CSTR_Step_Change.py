@@ -43,10 +43,10 @@ def CSTR_model(T1, T2,fv1,fv2, V=500, tspan = [0,3600], t_change=1800):
         "Inlet temperature": T1+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_cstr,  # Volume in ml
-        "k0": 7e6,          # Reaction rate constant (ml/mol/s)
+        "k0": 4.4e15,          # Reaction rate constant (ml/mol/s)
 
         # Thermodynamic constants (taken from Asprey et al., 1996)
-        "Ea": 45622.34,             # Activation energy (J/mol)
+        "Ea": 9.62e4,             # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho": 1,            # Density (g/ml)
