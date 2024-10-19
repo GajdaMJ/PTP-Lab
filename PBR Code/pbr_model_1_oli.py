@@ -202,6 +202,7 @@ if __name__ == '__main__':
     t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T400_PV']
 
     # Load and extract temperature data from CSV files
+
     for file in data_files:
         my_data = np.genfromtxt(f'PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
@@ -214,9 +215,7 @@ if __name__ == '__main__':
         results[file] = file_results
 
     # Simulate the model with PBR
-    n_tanks = 16
-    water_flowrate_c = 100  # Example value
-    aah_flowrate_c = 50  # Example value
+    n_tanks = 9
 
     # Create subplots for each reactor stage (2 rows and 4 columns for 8 subplots)
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
@@ -225,18 +224,23 @@ if __name__ == '__main__':
     slopes = []
     y_intercepts = []
     r_sq = []
+
     # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
         waterbath_temps = []  # To store all water bath temperatures from all files
         temp_probe_temps = []  # To store all probe temperatures from all files
 
+        actual_value= [] #initialize actual value 
+        predicted_value = [] #initialize predicted array
         # Collect data across all files
         for file in data_files:
             # Ensure the t_value indices don't exceed the available data
             if -(i + 1) < -len(t_values):
                 continue
-
             temp_data = np.array(results[file][t_values[-(i+1)]]['temperature'])
+
+            actual_value.append(temp_data[0])
+
 
             # Extract the initial temperature (first value) from the real data
             initial_real_temp = temp_data[0]
@@ -246,6 +250,7 @@ if __name__ == '__main__':
             waterbath_temp_data = np.array(results[file][t_values[8]]['temperature'])  # T400_PV is index 8
             initial_waterbath_temp = waterbath_temp_data[0]
             waterbath_temps.append(initial_waterbath_temp)  # Store the water bath temperatures
+
 
         # Now plot all collected points
         ax[i].plot(
@@ -272,18 +277,20 @@ if __name__ == '__main__':
             slopes.append(m)
             y_intercepts.append(b)
             
-            actual_value = m*temp_data + b
-            corr_matrix = np.corrcoef(actual_value, temp_data)
+            for file in range(len(data_files)):
+                predicted_value.append(m*actual_value[file] + b)
+            
+            corr_matrix = np.corrcoef(actual_value,predicted_value)
             corr = corr_matrix[0,1]
-            r_sq.append(corr**2)
+            print(predicted_value)
+            print(actual_value)
             print(corr**2)
+            r_sq.append(corr**2)
 
 
             # Print the equation of the line
             print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
         
-
-
         ax[i].set_title(f'Temperature Probe {i + 1}',fontsize = 14, fontweight = 'bold')
         ax[i].set_xlabel('Probe Temp (°C)',fontsize = 12)
         ax[i].set_ylabel('Water Bath Temp (°C)', fontsize = 12)
@@ -297,6 +304,7 @@ if __name__ == '__main__':
     fig.suptitle('Initial Temperature: Probe vs Water Bath', fontsize=16,fontweight= 'bold')
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+
 
 
 
