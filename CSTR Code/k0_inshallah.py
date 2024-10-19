@@ -38,11 +38,10 @@ conductivity = [cond_27,cond_30]
 
 
 ######## Creating calibration curve for concentration conversion ########
-o=1
 cal_cond = [1695,1636,1594,1530,1429,1274,963,690,523] #conductivity measures
 #cal_cond = [1695,1636,1586,1531,1419,1139,963,682,506] ##best?
 # cal_cond = [1695,1636,1586,1534,1429,1274,966,690,506] 
-cal_conc = [1.74*o, 1.566*o, 1.392*o, 1.218*o, 1.044*o,0.87*o,0.435*o,0.2175*o,0.10875*o] # known acetic acid concentration [mol/L]
+cal_conc = [1.74, 1.566, 1.392, 1.218, 1.044,0.87,0.435,0.2175,0.10875] # known acetic acid concentration [mol/L]
 
 def model_func(x, a, b,d):
     return a * np.exp(b * x) + d
@@ -64,6 +63,15 @@ plt.show()
 
 print(f"Fitted equation: y = {a:.5f} * exp({b:.5f}*x) + {d:.5f}")
 
+
+predict = []
+for i in range (0,9):
+    predict.append(model_func(cal_cond[i], a, b,d))
+corr_matrix = np.corrcoef(cal_conc, predict)
+corr = corr_matrix[0,1]
+R_sq = corr**2
+ 
+print(R_sq)
 
 ######### Converting experimental conductivity into concentration #########
 conc_27 = model_func(cond_27, a, b,d) # mol/L 

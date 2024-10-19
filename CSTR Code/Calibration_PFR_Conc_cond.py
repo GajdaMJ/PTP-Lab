@@ -28,3 +28,11 @@ plt.show()
 
 print(f"Fitted equation: y = {a:.10f} * exp({b:.5f}*x + {d:.5f})")
 
+predict = []
+for i in range (0,5):
+    predict.append(model_func(cal_cond[i], a, b,d))
+corr_matrix = np.corrcoef(cal_conc, predict)
+corr = corr_matrix[0,1]
+R_sq = corr**2
+ 
+print(R_sq)
