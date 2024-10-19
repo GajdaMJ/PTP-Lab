@@ -224,6 +224,7 @@ if __name__ == '__main__':
 
     slopes = []
     y_intercepts = []
+    r_sq = []
     # Plot initial actual temperature vs initial model temperature for each file
     for i in range(0, 8):
         waterbath_temps = []  # To store all water bath temperatures from all files
@@ -267,11 +268,21 @@ if __name__ == '__main__':
                 m * temp_probe_range + b,  # y = mx + b (water bath)
                 '-', label='Best Fit Line', color='blue'  # Line without points
             )
+
             slopes.append(m)
             y_intercepts.append(b)
             
+            actual_value = m*temp_data + b
+            corr_matrix = np.corrcoef(actual_value, temp_data)
+            corr = corr_matrix[0,1]
+            r_sq.append(corr**2)
+            print(corr**2)
+
+
             # Print the equation of the line
             print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}")
+        
+
 
         ax[i].set_title(f'Temperature Probe {i + 1}',fontsize = 14, fontweight = 'bold')
         ax[i].set_xlabel('Probe Temp (°C)',fontsize = 12)
