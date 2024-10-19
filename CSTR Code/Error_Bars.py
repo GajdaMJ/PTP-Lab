@@ -141,23 +141,21 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    # Load the datasets
     data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
     data_round2 = data_extract('Data\\Data from trade\\CSTR\\experiment14.10.csv')
-    
-    # Convert to numpy arrays
+
     elapsed_time_22c, temp_22c, initial_temperature_22c, aah_flowrate_22c, water_flowrate_22c = data_22c
     elapsed_time_round2, temp_round2, initial_temperature_round2, aah_flowrate_round2, water_flowrate_round2 = data_round2
 
-    # Select specific slices
+
+
+    # Slice the dataset for t=0 - t=end
     time_slice_22c = elapsed_time_22c[4:80]  # 4 to 80
     temp_slice_22c = temp_22c[4:80]
 
     time_slice_round2 = elapsed_time_round2[12:49]  # 12 to 49
     temp_slice_round2 = temp_round2[12:49]
 
-    # Create an array of times and temperatures
-    # Since the time ranges may not match, we will align the datasets
     common_time = np.union1d(time_slice_22c, time_slice_round2)  # Get all unique time points
 
     # Interpolate temperature values for the common time points
@@ -168,16 +166,40 @@ if __name__ == '__main__':
     avg_temp = (temp_interpolated_22c + temp_interpolated_round2) / 2
     std_temp = np.std([temp_interpolated_22c, temp_interpolated_round2], axis=0)
 
+    sol_me = CSTR_model(27, 186.22688293457, 14.8905906677246)
+    # Plotting the average temperature with error bars and the original datasets with improved aesthetics
     plt.figure(figsize=(10, 6))
-    plt.errorbar(common_time, avg_temp, yerr=std_temp, fmt='-o', label='Average Temperature', color='blue', capsize=5, elinewidth=1, markerfacecolor='red', markeredgecolor='black')
+
+    # Plot the average temperature with error bars
+    plt.errorbar(common_time, avg_temp, yerr=std_temp, fmt='-o', label='Average Temperature',color='#1f77b4', capsize=4, elinewidth=1.5, markerfacecolor='white', markeredgewidth=2)
+
+    # Plot the first original dataset (temp_slice_22c) with dashed line and transparency
+    plt.plot(time_slice_22c, temp_slice_22c, linestyle='--', color='#ff7f0e', alpha=0.8, linewidth=2,label='27°C First Run' )
+
+    # Plot the second original dataset (temp_slice_round2) with dashed line and transparency
+    plt.plot(time_slice_round2, temp_slice_round2, linestyle=':', color='#2ca02c', alpha=0.8, linewidth=2,label='27°C Second Run')
     
-    plt.xlabel('Time (minutes)')
-    plt.ylabel('Temperature (°C)')
-    plt.title('Average Temperature with Standard Deviation Error Bars')
-    plt.legend()
-    plt.grid()
-    plt.xlim(0, 30)
+    plt.plot(sol_me.t/60, sol_me.y[3,:]-273.15, color='purple',label='Model Prediction')
+    # Adding labels and title with improved font sizes
+    plt.xlabel('Time (minutes)', fontsize=14)
+    plt.ylabel('Temperature (°C)', fontsize=14)
+    plt.title('Average Temperature with Standard Deviation Error Bars', fontsize=16, weight='bold')
+
+    # Add legend with slightly larger font size
+    plt.legend(fontsize=12)
+
+    # Add grid with transparency
+    plt.grid(True, which='both', linestyle='--', alpha=0.6)
+
+    # Set the x-axis and y-axis limits
+    plt.xlim(0, 27)
+    plt.ylim(min(min(temp_slice_22c), min(temp_slice_round2)) - 1, max(max(temp_slice_22c), max(temp_slice_round2)) + 1)
+
+    # Minor tweaks for axis ticks and layout
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.tight_layout()
+
+    # Show the plot
     plt.show()
 
-    print("Average Temperature:", avg_temp)
-    print("Standard Deviation:", std_temp)
