@@ -288,19 +288,16 @@ if __name__ == '__main__':
     n_tanks_range = range(8, 20)
     error_list = []  # will store (#of tanks , error)
     for i in n_tanks_range:
-        # Run the model for the current number of tanks
         sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=i)
 
-        # Compute sum of squared errors between model and experimental data
+        #sum of squared errors between model and experimental data
         probe_errors, total_error = sum_of_squared_error(results, sol_me, t_values, i, initial_temperature)
-
-
         print(f"Total SSE for {i} tanks: {total_error:.2f}")
 
         # Append the current tank number and total error to the error list
         error_list.append((i, total_error))
 
-    # After the loop, find the optimal number of tanks with the minimum total error
+    #Find min
     best_n_tanks, min_error = min(error_list, key=lambda x: x[1])
 
     # Print the result of the optimal tank search
