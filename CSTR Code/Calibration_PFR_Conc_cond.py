@@ -26,7 +26,7 @@ plt.legend()
 plt.title('PBR Conductivity vs Concentration Calibration Curve')
 plt.show()
 
-print(f"Fitted equation: y = {a:.10f} * exp({b:.5f}*x + {d:.5f})")
+print(f"Fitted equation: y = {a:.10f} * exp({b:.5f}*x) + {d:.5f}")
 
 predict = []
 for i in range (0,5):

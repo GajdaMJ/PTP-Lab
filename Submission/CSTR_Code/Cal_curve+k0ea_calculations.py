@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import scipy.integrate
 from scipy.optimize import curve_fit
+from matplotlib.ticker import ScalarFormatter
 
 
 cstr_data = np.genfromtxt('Data/Data from trade/CSTR/experiment14.10.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')  # Using ISO-8859-1 encoding
@@ -194,6 +195,8 @@ plt.scatter(rep_temp_range, ln_k_range, color='red', label='Data Points')
 plt.plot(rep_temp_fit_1, ln_k_fit_a, label=f'Fit: {a1:.5f} * x +({b1:.5f})', color='red')
 plt.plot(rep_temp_fit_1, ln_k_fit_a1, label=f'Fit: {a2:.5f} * x +({b2:.5f})', color='blue',linestyle = 'dashed')
 plt.plot(rep_temp_fit_1, ln_k_fit_a2, label=f'Fit: {a3:.5f} * x +({b3:.5f})', color='green',linestyle = 'dashed')
+plt.gca().xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.xlabel('1/T [1/K]')
 plt.ylabel('ln(k)')
 plt.title("Plot to determine k0 and Ea")
