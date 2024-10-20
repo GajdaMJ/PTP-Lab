@@ -263,11 +263,6 @@ if __name__ == '__main__':
             corr_matrix = np.corrcoef(waterbath_temps,predicted_value)
             corr = corr_matrix[0,1]
 
-            print(f" The r^2 for probe {i} is: {corr**2}") #printing the r^2 value
-            r_sq.append(corr**2)
-
-            print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}") #printing equation of the line
-
 #plotting all of the temperature probes
 if __name__ == '__main__':
     my_data = np.genfromtxt('Data/Data from trade/PFR/PFR_30-35_100_10-20.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
@@ -327,52 +322,3 @@ if __name__ == '__main__':
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
     
-    # Ploting only 2,6, and 9 tanks and their correspondant temperature probes
-if __name__ == '__main__':
-    my_data = np.genfromtxt('Data/Data from trade/PFR/PFR_30-35_100_10-20.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
-
-    # Extracting all temperature data
-    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
-    results = {}
-
-    for t_value in t_values:
-        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
-        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time': offset_time}
-
-    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
-    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
-
-    initial_temperature = np.min(temp_c)
-    aah_flowrate_c = np.median(aah_flowrate_c_vector)
-    water_flowrate_c = np.median(water_flowrate_c_vector)
-    
-    n_tanks = 9
-
-    sol_time, sol_y = PBR_model(initial_temperature, 35, 24.3216648101807, 1.8605090379715, 3.3137059211731, V=131, tspan=[0, 3600], t_change1=11*60+20, t_change2=25*60+55, n=n_tanks)
-
-    #plotting
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    colors = ['firebrick', 'steelblue', 'forestgreen']  
-    tank_data = [2,5,8]
-    for t in range(len(tank_data)):
-        i = tank_data[t] -1 
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-
-        #plotting real temperature
-        plt.plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color= colors[t], label=f'Real Data, Probe {i+1} ', linestyle = 'dashed', linewidth=2)
-
-        # plotting the model for the corresponding temperature probe 
-        plt.plot(sol_time/ 60, sol_y[3 + tank_data[t] * 5, :] - 273.15, color= colors[t], label=f'Model Prediction, Tank = {tank_data[t] + 1}', linewidth = 2)
-
-    plt.title('Temperature Comparison for Tanks 2, 6, and 9', fontsize=16, fontweight='bold')
-    plt.xlabel('Elapsed Time (min)', fontsize=12)
-    plt.ylabel('Temperature (°C)', fontsize=12)
-    plt.xlim(0, 45)
-    plt.minorticks_on()
-    plt.grid(which='major', linewidth=2)
-    plt.grid(which='minor', linewidth=0.3)
-    plt.legend(fontsize=10)
-    plt.tight_layout()
-    plt.show()
-

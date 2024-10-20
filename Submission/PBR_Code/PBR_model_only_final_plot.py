@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-import math
 import scipy.integrate
+import math
 # Assume reaction is 1st order wrt both components
 # Assume isothermal (no exotherm)
 # Assume constant density
 
-def PBR_model(T1, T2,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change1=1800, t_change2=2400, n=6):
+def PBR_model(T,fv1,fv2, V=131, tspan = [0,3600], n=6):
     '''Models the behavior of the reaction: Water + Acetic Anhydride -> 2 * Acetic acid in an adiabatic CSTR reactor. \n
     Required Arguments: \n
     T = inlet temperature for the reactor given in units celsius \n
@@ -22,7 +22,7 @@ def PBR_model(T1, T2,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change1=1800, 
 
     # Convert flow rates (ml/min to ml/s)
     fv_w_dm3_s = fv1 / 60  # Water flow rate in ml/s
-    fv_a_dm3_s = fv2_1  / 60  # Anhydride flow rate in ml/s
+    fv_a_dm3_s = fv2  / 60  # Anhydride flow rate in ml/s
     #dont use ml/s use l/s
     #Chemical constants
 
@@ -46,14 +46,18 @@ def PBR_model(T1, T2,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change1=1800, 
     A_total = (3*V_beads*diameter_bead)/2
     A_per_tank = A_total/n
 
+
+    
     params = { # Stores the relevant thermodynamic constants as a dictionary 
         "C_in_water": (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
         "C_in_AAH": (flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
-        "Inlet temperature": T1+273.15, # Temp but now in kelvin
+        "Inlet temperature": T+273.15, # Temp but now in kelvin
         "flow": flow_array,
         "V": v_pfr_tank,  # Volume in ml
-        "k0": 4.4e14,              # Reaction rate constant (ml/mol/s)
-        "Ea": 9.825e4,            # Activation energy (J/mol)
+        "k0": 4.4e14, # Reaction rate constant (ml/mol/s)
+
+        # Thermodynamic constants (taken from Asprey et al., 1996)
+        "Ea": 9.82e4,            # Activation energy (J/mol)
         "R": 8.314,              # Gas constant (J/mol/K)
         "H": -56.6e3,              # Enthalpy change (J/mol)
         "rho_water": 1,            # Density (g/ml)
@@ -62,10 +66,10 @@ def PBR_model(T1, T2,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change1=1800, 
         "cp_water": 4.186,             # Heat capacity (J/g/K)
         "cp_glass": 0.84,            #Heat capacity
         "Area_bead_per_tank": A_per_tank, # Area of beads per "tank"
-        "U" : 1.2122e-4#0.12122 # Oliver calc
+        "U" : 1.2122e-4#0.12122 W/m2*K but we want in W/cm2*K so e-4 
     }
-    # print(params['C_in_AAH']*params['C_in_water'])
-    xini_temp = [cw_pure,0,0,T1+273.15, T1+273.15] # Initial Conditions 
+
+    xini_temp = [cw_pure,0,0,T+273.15, T+273.15] # Initial Conditions 
     xini = np.zeros(5*n)
     for i in range(5*n):
         if np.mod(i,5)==0:
@@ -79,28 +83,8 @@ def PBR_model(T1, T2,fv1,fv2_1, fv2_2, V=131, tspan = [0,3600], t_change1=1800, 
         elif np.mod(i, 5)==4:
             xini[i] = xini_temp[4]
 
-    sol_1 = scipy.integrate.solve_ivp(der_func, [tspan[0],t_change1], xini, args=(params, n)) 
-
-    #Modify the parameters to account for the step change
-    fv_a_dm3_s = fv2_2  / 60  # Anhydride flow rate in ml/s
-    flow_array = [fv_w_dm3_s, fv_a_dm3_s]
-    params['C_in_water']= (flow_array[0]*cw_pure)/(flow_array[0]+flow_array[1]),
-    params['C_in_AAH'] =(flow_array[1]*caah_pure)/(flow_array[0]+flow_array[1]),
-
-    params['flow'] = flow_array
-
-    xini_2 = sol_1.y[:, -1]
-
-    sol_2 = scipy.integrate.solve_ivp(der_func, [t_change1,t_change2], xini_2, args=(params, n), rtol=1e-8, atol=1e-10)
-
-    params['Inlet temperature'] = T2+273.15
-    xini_3 = sol_2.y[:, -1]
-
-    sol_3 = scipy.integrate.solve_ivp(der_func, [t_change2,tspan[1]], xini_3, args=(params, n), rtol=1e-8, atol=1e-10)
-    combined_time = np.concatenate((sol_1.t, sol_2.t, sol_3.t))  # Combine time points
-    combined_y = np.concatenate((sol_1.y, sol_2.y, sol_3.y), axis=1)  # Combine solution arrays along axis 1 (columns)
-
-    return combined_time, combined_y
+    sol_me = scipy.integrate.solve_ivp(der_func, tspan, xini, t_eval=np.linspace(tspan[0], tspan[1], 400), args=(params, n)) 
+    return sol_me
 
 def der_func(t,C, parameters, n=6):
     '''This function contains the differential equations to solve the reaction A+B->2C in an adiabatic 
@@ -109,9 +93,8 @@ def der_func(t,C, parameters, n=6):
     c = Concentration vector like [c_water, c_AAH, c_AA, Temperature]\n
     parameters = dictionary containing thermodynamic constants
     '''
-    # Initializing derivative vector
-    dcdt = np.zeros(5*n)
-    # array of 4 zeros corresponding to [c_water/dt, c_AAH/dt, c_AA/dt, dT/dt]
+
+    dcdt = np.zeros(5*n) # array of 5*n zeros corresponding to [c_water/dt, c_AAH/dt, c_AA/dt, dT/dt(liquid), dT/dt (glass beads) repeating cyclically]
 
     # Getting parameters out of our dictionary 
     C_in_w = parameters['C_in_water']
@@ -139,8 +122,7 @@ def der_func(t,C, parameters, n=6):
            dcdt[0] = (total_flow / V) * (C_in_w - C[0]) - C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Water Concentration derivative
            dcdt[1] = (total_flow / V) * (C_in_AAH - C[1]) - C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Anhydride Concentration derivative
            dcdt[2] = (total_flow / V) * (0 - C[2]) + 2 * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3]))  # Acetic acid concentration derivative
-           dcdt[3] = (total_flow / V) * (inlet_temp - C[3]) - H / (rho_water *cp_water) * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) + (U * A) / (rho_water *cp_water * V) * (C[i+1] - C[3])  # Reactor temperature derivative
-           # Glass bead temperature derivative
+           dcdt[3] = (total_flow / V) * (inlet_temp - C[3]) - H / (rho_water * cp_water) * C[0] * C[1] * k0 * np.exp(-Ea / (R * C[3])) + (U * A) / (rho_water * cp_water * V) * (C[i+1] - C[3])  # Reactor temperature derivative
            dcdt[4] = (U * A) / (rho_glass * cp_glass * V) * (C[3] - C[4])  # Temperature change of glass beads
         else:
             # Loop for additional reactors
@@ -151,7 +133,7 @@ def der_func(t,C, parameters, n=6):
             elif np.mod(i, 5) == 2:
                 dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) + 2 * C[i - 2] * C[i - 1] * k0 * np.exp(-Ea / (R * C[i + 1])) # AA
             elif np.mod(i, 5) == 3:
-                dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) - H / (rho_water *cp_water) * C[i - 3] * C[i - 2] * k0 * np.exp(-Ea / (R * C[i])) + (U * A) / (rho_water *cp_water * V) * (C[i+1] - C[i]) 
+                dcdt[i] = (total_flow / V) * (C[i - 5] - C[i]) - H / (rho_water * cp_water) * C[i - 3] * C[i - 2] * k0 * np.exp(-Ea / (R * C[i])) + (U * A) / (rho_water * cp_water * V) * (C[i+1] - C[i]) 
             elif np.mod(i, 5) == 4:
                 dcdt[i] = (U * A) / (rho_glass * cp_glass * V) * (C[i - 1] - C[i])  # Temperature change of glass beads for additional reactors
     return dcdt
@@ -209,6 +191,8 @@ def data_extract(data, x, offset=0):
 
     return elapsed_time, temp_values, (flow_dates[0] - start_time).total_seconds() / 60 
 
+
+#finding the equation of the line for the correction of the tempeture probe results
 if __name__ == '__main__':
     data_files = ['18.09.25C_again', '18.09.40C_again', '25.09.30C', '25.09.22C(att.55.conductivityweird)', '25.09.30C', '25.09.33C', 'PFR_30-35_100_10-20']
     results = {}
@@ -262,15 +246,11 @@ if __name__ == '__main__':
                 predicted_value.append(m*probe_values[file] + b)
             corr_matrix = np.corrcoef(waterbath_temps,predicted_value)
             corr = corr_matrix[0,1]
+        
 
-            print(f" The r^2 for probe {i} is: {corr**2}") #printing the r^2 value
-            r_sq.append(corr**2)
-
-            print(f"Probe {i + 1}: y = {m:.4f}x + {b:.4f}") #printing equation of the line
-
-#plotting all of the temperature probes
+#Plotting of all the temperature probes on different graphs
 if __name__ == '__main__':
-    my_data = np.genfromtxt('Data/Data from trade/PFR/PFR_30-35_100_10-20.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+    my_data = np.genfromtxt('PFR_2/PFR_all/18.09.40C_again.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
     # Extracting all temperature data
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
@@ -280,99 +260,46 @@ if __name__ == '__main__':
         elap_time, temp_c, offset_time = data_extract(my_data, t_value)
         results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time':offset_time}
 
-    # Get AAH Flowrate and Water Flowrate
     elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
     elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
 
-    # Find initial temperature and flowrates
     initial_temperature = np.min(temp_c)
     aah_flowrate_c = np.median(aah_flowrate_c_vector)
     water_flowrate_c = np.median(water_flowrate_c_vector)
-    print(initial_temperature)
+    
     n_tanks=9
 
-    aah_flowrate_1 = aah_flowrate_c_vector[7]
-    aah_flowrate_2 = aah_flowrate_c_vector[-8]
-    
-    # Run PBR model simulation
-    sol_time, sol_y = PBR_model(initial_temperature, 35, 24.3216648101807, 1.8605090379715, 3.3137059211731, V=131, tspan=[0, 3600], t_change1=11*60+20, t_change2=25*60+55, n=n_tanks)
+    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
-    # Create subplots for each reactor stage
+    #Plotting
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
     ax = ax.flatten()
 
-    retention_time = 2 + 2/60 #minutes
+    retention_time = 2 + 2 / 60  # minutes
+
     for i in range(0, 8):
-        # Extract experimental temperature data
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-        tank = math.floor((i*n_tanks)/(8)) + 1
-
-        # Plot real temperature data
-        ax[i].plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color='#ff7f0e', label='Real Data')
-
-        # Plot model temperature data for the corresponding stage
-        ax[i].plot(sol_time / 60 , sol_y[3 + tank*5, :] - 273.15, color='#1f77b4', label='Model Prediction')
-
-        # Set plot title, labels, and grid
-        ax[i].set_title(f'Temperature probe {i + 1}, and reactor {tank + 1} Data')
-        ax[i].set_xlabel('Elapsed Time (min)')
-        ax[i].set_ylabel('Change in Temperature (°C)')
-        ax[i].set_xlim(0, 45)
-        ax[i].grid(True)
-        ax[i].legend()
-
-    # Set global title and adjust layout
-    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.show()
-    
-    # Ploting only 2,6, and 9 tanks and their correspondant temperature probes
-if __name__ == '__main__':
-    my_data = np.genfromtxt('Data/Data from trade/PFR/PFR_30-35_100_10-20.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
-
-    # Extracting all temperature data
-    t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T200_PV']
-    results = {}
-
-    for t_value in t_values:
-        elap_time, temp_c, offset_time = data_extract(my_data, t_value)
-        results[t_value] = {'elapsed_time': elap_time, 'temperature': temp_c, 'offset_time': offset_time}
-
-    elapsed_time_c_aah, aah_flowrate_c_vector, offset_time = data_extract(my_data, x="P120_Flow")
-    elapsed_time_c_water, water_flowrate_c_vector, offset_time = data_extract(my_data, x='P100_Flow')
-
-    initial_temperature = np.min(temp_c)
-    aah_flowrate_c = np.median(aah_flowrate_c_vector)
-    water_flowrate_c = np.median(water_flowrate_c_vector)
-    
-    n_tanks = 9
-
-    sol_time, sol_y = PBR_model(initial_temperature, 35, 24.3216648101807, 1.8605090379715, 3.3137059211731, V=131, tspan=[0, 3600], t_change1=11*60+20, t_change2=25*60+55, n=n_tanks)
-
-    #plotting
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    colors = ['firebrick', 'steelblue', 'forestgreen']  
-    tank_data = [2,5,8]
-    for t in range(len(tank_data)):
-        i = tank_data[t] -1 
-        temp_data = np.array(results[t_values[-(i+1)]]['temperature'])
-        elapsed_time = results[t_values[-(i+1)]]['elapsed_time']
-
-        #plotting real temperature
-        plt.plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color= colors[t], label=f'Real Data, Probe {i+1} ', linestyle = 'dashed', linewidth=2)
+        temp_data = np.array(results[t_values[-(i + 1)]]['temperature'])
+        elapsed_time = results[t_values[-(i + 1)]]['elapsed_time']
+        if i == 0:
+            tank = 1
+        else:
+            tank = math.floor((i * n_tanks) / (8)) +1
+        
+        # plotting real temperature data
+        ax[i].plot(elapsed_time, (slopes[i]*temp_data + y_intercepts[i]) - (slopes[i]*temp_data[0] + y_intercepts[i]) + initial_temperature, color='#ff7f0e', label='Real Data', linewidth=2)
 
         # plotting the model for the corresponding temperature probe 
-        plt.plot(sol_time/ 60, sol_y[3 + tank_data[t] * 5, :] - 273.15, color= colors[t], label=f'Model Prediction, Tank = {tank_data[t] + 1}', linewidth = 2)
+        ax[i].plot(sol_me.t / 60, sol_me.y[3 + tank * 5, :] - 273.15, color='#1f77b4', label='Model Prediction', linewidth=2)
 
-    plt.title('Temperature Comparison for Tanks 2, 6, and 9', fontsize=16, fontweight='bold')
-    plt.xlabel('Elapsed Time (min)', fontsize=12)
-    plt.ylabel('Temperature (°C)', fontsize=12)
-    plt.xlim(0, 45)
-    plt.minorticks_on()
-    plt.grid(which='major', linewidth=2)
-    plt.grid(which='minor', linewidth=0.3)
-    plt.legend(fontsize=10)
-    plt.tight_layout()
+        # Set plot title, labels, and grid
+        ax[i].set_title(f'Temperature Probe {i + 1}, Reactor {tank + 1}', fontsize=14, fontweight='bold')
+        ax[i].set_xlabel('Elapsed Time (min)', fontsize=12)
+        ax[i].set_ylabel('Temperature (°C)', fontsize=12)
+        ax[i].set_xlim(0, 20)
+        ax[i].minorticks_on()
+        ax[i].grid(which='major', linewidth=2)
+        ax[i].grid(which='minor', linewidth=0.3)
+        ax[i].legend(fontsize=10)
+    fig.suptitle('Reactor Temperature Data Comparison', fontsize=16, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
