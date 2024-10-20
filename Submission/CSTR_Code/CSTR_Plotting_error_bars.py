@@ -139,8 +139,8 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
-    data_round2 = data_extract('Data\\Data from trade\\CSTR\\experiment14.10.csv')
+    data_22c = data_extract('Data\CSTR_Data\CSTR 27c.csv')
+    data_round2 = data_extract('Data\CSTR_Data\experiment14.10.csv')
 
     elapsed_time_22c, temp_22c, initial_temperature_22c, aah_flowrate_22c, water_flowrate_22c = data_22c
     elapsed_time_round2, temp_round2, initial_temperature_round2, aah_flowrate_round2, water_flowrate_round2 = data_round2

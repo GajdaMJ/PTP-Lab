@@ -6,7 +6,7 @@ from scipy.optimize import curve_fit
 from matplotlib.ticker import ScalarFormatter
 
 
-cstr_data = np.genfromtxt('Data/Data from trade/CSTR/experiment14.10.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')  # Using ISO-8859-1 encoding
+cstr_data = np.genfromtxt('Data\CSTR_Data\experiment14.10.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')  # Using ISO-8859-1 encoding
 
 def data_extract(data, x, offset=0):
     rows = data[data['TagName'] == x]

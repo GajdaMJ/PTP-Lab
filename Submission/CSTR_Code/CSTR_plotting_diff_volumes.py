@@ -143,7 +143,7 @@ def data_extract(data_path):
 
 if __name__ == '__main__':
     # Extract the data
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv')
+    data_22c = data_extract('Data\CSTR_Data\CSTR 27c.csv')
 
     time_data = np.array(data_22c[0][8:90])
     conc_data = np.array(data_22c[1][8:90])

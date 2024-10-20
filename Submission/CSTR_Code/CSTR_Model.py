@@ -136,7 +136,7 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\\CSTR\\Runs 16.09\\CSTR 27c.csv') #Place relative path here
+    data_22c = data_extract('Data/CSTR_Data/CSTR 27c.csv') #Place relative path here
     sol_me = CSTR_model(data_22c[2], data_22c[4], data_22c[3], V=567)
 
     # plt.plot(sol_me[0], sol_me[1][:, 1], label='Conc. AAH_me')

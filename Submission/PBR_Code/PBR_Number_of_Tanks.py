@@ -228,7 +228,7 @@ def sum_of_squared_error(results, sol_me, t_values, n_tanks, initial_temperature
 
 
 if __name__ == '__main__':
-    my_data = np.genfromtxt('Data\PFR\\25.09.33C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+    my_data = np.genfromtxt('Data\PBR_Data\\25.09.33C.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV'] #Names of probes
     
     results = {}

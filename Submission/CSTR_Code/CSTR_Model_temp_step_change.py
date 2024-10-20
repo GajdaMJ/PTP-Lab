@@ -153,7 +153,7 @@ def data_extract(data_path):
 
 
 if __name__ == '__main__':
-    data_22c = data_extract('Data\Data from trade\CSTR\experiment14.10.csv')
+    data_22c = data_extract('Data\CSTR_Data\experiment14.10.csv')
 
     sol_time, sol_y = CSTR_model(26.9, 29.99, 185.83, 14.89, V=567)
 

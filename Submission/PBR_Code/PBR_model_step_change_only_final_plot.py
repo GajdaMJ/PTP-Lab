@@ -215,7 +215,7 @@ if __name__ == '__main__':
     t_values = ['T208_PV', 'T207_PV', 'T206_PV', 'T205_PV', 'T204_PV', 'T203_PV', 'T202_PV', 'T201_PV', 'T400_PV']
 
     for file in data_files:
-        my_data = np.genfromtxt(f'PFR_2/PFR_all/{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+        my_data = np.genfromtxt(f'Data\PBR_Data\{file}.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
         file_results = {}
         for t_value in t_values:
             elap_time, temp_c, _ = data_extract(my_data, t_value) 
@@ -265,7 +265,7 @@ if __name__ == '__main__':
 
 #plotting all of the temperature probes
 if __name__ == '__main__':
-    my_data = np.genfromtxt('Data/Data from trade/PFR/PFR_30-35_100_10-20.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
+    my_data = np.genfromtxt('Data\PBR_Data\PFR_30-35_100_10-20.csv', delimiter=';', dtype=None, names=True, encoding='ISO-8859-1')
 
     # Extracting all temperature data
     t_values = ['T208_PV','T207_PV','T206_PV','T205_PV','T204_PV','T203_PV','T202_PV','T201_PV','T200_PV']
