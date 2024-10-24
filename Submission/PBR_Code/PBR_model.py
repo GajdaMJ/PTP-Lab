@@ -292,8 +292,7 @@ if __name__ == '__main__':
     water_flowrate_c = np.median(water_flowrate_c_vector)
     
     n_tanks=9
-
-    sol_me = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
+    sol_PBR = PBR_model(initial_temperature, water_flowrate_c, aah_flowrate_c, V=131, tspan=[0, 3600], n=n_tanks)
 
     #Plotting
     fig, ax = plt.subplots(2, 4, figsize=(20, 8), sharex=True, sharey=True)
